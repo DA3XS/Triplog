@@ -5,7 +5,7 @@ import { Dashboard } from './components/Dashboard';
 import { CalendarView } from './components/CalendarView';
 import { HistoryList } from './components/HistoryList';
 import { SettingsView } from './components/SettingsView';
-import { NewTripForm } from './components/NewTripForm';
+import { NewTripForm, type TripFormMode } from './components/NewTripForm';
 
 type Tab = 'dashboard' | 'calendar' | 'history' | 'settings';
 
@@ -21,7 +21,7 @@ const WELCOME_DISMISSED_KEY = 'welcomeDismissed';
 function App() {
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<Tab>('dashboard');
-  const [showNewTrip, setShowNewTrip] = useState(false);
+  const [tripFormMode, setTripFormMode] = useState<TripFormMode | null>(null);
   const [welcomeDismissed, setWelcomeDismissed] = useState(true);
   const trips = useTrips();
 
@@ -80,7 +80,7 @@ function App() {
           </div>
         )}
 
-        {tab === 'dashboard' && <Dashboard onNewTrip={() => setShowNewTrip(true)} />}
+        {tab === 'dashboard' && <Dashboard onOpenTripForm={setTripFormMode} />}
         {tab === 'calendar' && <CalendarView />}
         {tab === 'history' && <HistoryList />}
         {tab === 'settings' && <SettingsView />}
@@ -104,7 +104,7 @@ function App() {
         </div>
       </nav>
 
-      <NewTripForm open={showNewTrip} onClose={() => setShowNewTrip(false)} />
+      <NewTripForm mode={tripFormMode} onClose={() => setTripFormMode(null)} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { getOverallStatus, getTripPhaseAt } from '../lib/timeline';
 import { formatAmount, formatDate, formatDaysCount, formatRelativeDays } from '../lib/format';
 import { TripCurve } from './TripCurve';
 import { AfterglowBar } from './AfterglowBar';
+import type { TripFormMode } from './NewTripForm';
 import type { TripPhase } from '../types';
 
 const PHASE_LABEL: Record<TripPhase, string> = {
@@ -34,10 +35,10 @@ const PHASE_EMOJI: Record<TripPhase, string> = {
 const PHARMACOLOGICAL_PHASES: TripPhase[] = ['onset', 'comeup', 'peak', 'comedown', 'tail'];
 
 interface Props {
-  onNewTrip: () => void;
+  onOpenTripForm: (mode: TripFormMode) => void;
 }
 
-export function Dashboard({ onNewTrip }: Props) {
+export function Dashboard({ onOpenTripForm }: Props) {
   const trips = useTrips();
   const substancesById = useSubstancesById();
   const now = useNow();
@@ -62,12 +63,20 @@ export function Dashboard({ onNewTrip }: Props) {
               <span>{PHASE_LABEL[status.phase]}</span>
             </div>
           </div>
-          <button
-            onClick={onNewTrip}
-            className="rounded-full bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 text-sm font-medium transition-colors"
-          >
-            + Neuer Trip
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onOpenTripForm('past')}
+              className="rounded-full border border-black/15 dark:border-white/15 px-4 py-2 text-sm font-medium transition-colors"
+            >
+              Trip nachtragen
+            </button>
+            <button
+              onClick={() => onOpenTripForm('new')}
+              className="rounded-full bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 text-sm font-medium transition-colors"
+            >
+              + Neuer Trip
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 text-sm text-black/70 dark:text-white/70">
