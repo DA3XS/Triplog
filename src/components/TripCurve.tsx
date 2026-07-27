@@ -38,13 +38,21 @@ export function TripCurve({ trip, substance, now }: Props) {
   // the end — no flat plateau, no separate segments.
   const peakTime = lerp(comeupEnd, peakEnd, 0.375);
 
+  // A tiny flat "shoulder" right around the peak keeps the spline's tangent
+  // near-zero there, avoiding an overshoot hiccup where the steep rise
+  // hands off into the decline.
+  const shoulderStart = lerp(comeupEnd, peakTime, 0.85);
+  const shoulderEnd = lerp(peakTime, end, 0.04);
+
   const risePoints: { t: number; intensity: number }[] = [
     { t: start, intensity: 0 },
     { t: lerp(start, onsetEnd, 0.6), intensity: 0.5 },
     { t: onsetEnd, intensity: 0.78 },
     { t: lerp(onsetEnd, comeupEnd, 0.5), intensity: 0.92 },
     { t: comeupEnd, intensity: 0.97 },
+    { t: shoulderStart, intensity: 0.99 },
     { t: peakTime, intensity: 1 },
+    { t: shoulderEnd, intensity: 0.99 },
   ].filter((p, i, arr) => i === 0 || p.t > arr[i - 1].t);
 
   // Gentle, roughly steady decline from the peak down to a low tail value
@@ -54,7 +62,7 @@ export function TripCurve({ trip, substance, now }: Props) {
   const DECAY_END_INTENSITY = 0.06;
   const decayPoints: { t: number; intensity: number }[] = Array.from({ length: DECAY_STEPS + 1 }, (_, i) => {
     const f = i / DECAY_STEPS;
-    return { t: lerp(peakTime, end, f), intensity: lerp(1, DECAY_END_INTENSITY, f) };
+    return { t: lerp(shoulderEnd, end, f), intensity: lerp(0.99, DECAY_END_INTENSITY, f) };
   });
 
   const keyPoints = [...risePoints, ...decayPoints.slice(1)];
