@@ -32,19 +32,32 @@ export function TripCurve({ trip, substance, now }: Props) {
   const mid = (a: number, c: number) => a + (c - a) * 0.5;
   const lerp = (a: number, c: number, f: number) => a + (c - a) * f;
 
-  // Fast rise to a peak roughly a quarter into the Wirkdauer phase, then a
-  // gentle decline starting around its three-quarter mark, a steady
-  // come-down, and a long, deliberately flat low tail.
-  const peakApex = lerp(comeupEnd, peakEnd, 0.25);
-  const peakFallStart = lerp(comeupEnd, peakEnd, 0.75);
+  // Psilocybin ('apex'): a clear peak roughly a quarter into the Wirkdauer
+  // phase, then a gentle decline starting around its three-quarter mark.
+  // LSD ('plateau'): sustained near-full intensity across the whole
+  // Wirkdauer phase, no single defined high point, only receding once
+  // Come-down actually starts.
+  const isPlateau = substance.peakShape === 'plateau';
+  const peakPoints = isPlateau
+    ? [
+        { t: lerp(comeupEnd, peakEnd, 0.2), intensity: 0.98 },
+        { t: lerp(comeupEnd, peakEnd, 0.5), intensity: 1 },
+        { t: lerp(comeupEnd, peakEnd, 0.85), intensity: 0.97 },
+      ]
+    : [
+        { t: lerp(comeupEnd, peakEnd, 0.25), intensity: 1 },
+        { t: lerp(comeupEnd, peakEnd, 0.75), intensity: 0.85 },
+      ];
+  const peakEndIntensity = isPlateau ? 0.9 : 0.6;
 
   const keyPoints: { t: number; intensity: number }[] = [
     { t: start, intensity: 0 },
-    { t: mid(start, onsetEnd), intensity: 0.55 },
-    { t: onsetEnd, intensity: 0.9 },
-    { t: peakApex, intensity: 1 },
-    { t: peakFallStart, intensity: 0.85 },
-    { t: peakEnd, intensity: 0.6 },
+    { t: mid(start, onsetEnd), intensity: 0.5 },
+    { t: onsetEnd, intensity: 0.78 },
+    { t: mid(onsetEnd, comeupEnd), intensity: 0.92 },
+    { t: comeupEnd, intensity: 0.98 },
+    ...peakPoints,
+    { t: peakEnd, intensity: peakEndIntensity },
     { t: mid(peakEnd, comedownEnd), intensity: 0.35 },
     { t: comedownEnd, intensity: 0.2 },
     { t: mid(comedownEnd, end), intensity: 0.14 },
@@ -62,6 +75,7 @@ export function TripCurve({ trip, substance, now }: Props) {
 
   const segments = [
     { label: 'Onset', from: start, to: onsetEnd },
+    { label: 'Come-up', from: onsetEnd, to: comeupEnd },
     { label: 'Wirkdauer', from: comeupEnd, to: peakEnd },
     { label: 'Come-down', from: peakEnd, to: comedownEnd },
     { label: 'Ausklang', from: comedownEnd, to: end },
