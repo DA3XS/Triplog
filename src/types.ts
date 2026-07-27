@@ -27,13 +27,6 @@ export interface Substance {
   comedown: PhaseRange;
   /** Final tail-off (hours-scale), not to be confused with the day-scale mental afterglow below. */
   tail: PhaseRange;
-  /**
-   * How the curve renders the peak phase: 'apex' has a clear early high
-   * point that gently declines before Come-down (psilocybin), 'plateau' is
-   * a flatter, sustained high with no single obvious peak (LSD). Defaults
-   * to 'apex' when absent.
-   */
-  peakShape?: 'apex' | 'plateau';
   /** Dose thresholds in the substance's defaultUnit, used to label a trip's intensity. */
   doseThresholds: Record<DoseLevel, number>;
   /**

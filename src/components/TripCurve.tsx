@@ -33,35 +33,37 @@ export function TripCurve({ trip, substance, now }: Props) {
 
   const lerp = (a: number, c: number, f: number) => a + (c - a) * f;
 
-  // Psilocybin ('apex'): peak is reached early in the Wirkdauer phase, then
-  // one continuous decay for the rest of the trip. LSD ('plateau'): the
-  // high point is sustained much longer before the same decay kicks in.
-  const isPlateau = substance.peakShape === 'plateau';
-  const peakTime = lerp(comeupEnd, peakEnd, isPlateau ? 0.7 : 0.2);
+  // Steep rise from ingestion, then a sustained flat plateau through most of
+  // the Wirkdauer phase (no early single peak), and only in its last ~20%
+  // does the real decline begin — continuing smoothly through Nachwirkung
+  // and strongly flattening out towards the end.
+  const declineStart = lerp(comeupEnd, peakEnd, 0.8);
 
-  // Steep rise from ingestion up to the peak.
   const risePoints: { t: number; intensity: number }[] = [
     { t: start, intensity: 0 },
     { t: lerp(start, onsetEnd, 0.6), intensity: 0.5 },
     { t: onsetEnd, intensity: 0.78 },
     { t: lerp(onsetEnd, comeupEnd, 0.5), intensity: 0.92 },
-    { t: comeupEnd, intensity: isPlateau ? 0.99 : 0.98 },
-    { t: peakTime, intensity: 1 },
+    { t: comeupEnd, intensity: 0.97 },
   ].filter((p, i, arr) => i === 0 || p.t > arr[i - 1].t);
 
-  // Smooth exponential-style decay from the peak all the way to the end of
-  // the tail: falls at first, then flattens out noticeably (never fully
-  // resetting the shape of "langsam abfallen, in der Nachwirkung stark
-  // abflachen").
-  const DECAY_STEPS = 10;
-  const DECAY_END_INTENSITY = 0.04;
+  const plateauPoints: { t: number; intensity: number }[] = [
+    { t: lerp(comeupEnd, declineStart, 0.35), intensity: 0.99 },
+    { t: lerp(comeupEnd, declineStart, 0.7), intensity: 1 },
+    { t: declineStart, intensity: 0.98 },
+  ].filter((p) => p.t > comeupEnd);
+
+  // Smooth exponential-style decay: falls at first, then flattens out
+  // noticeably ("langsam abfallen, in der Nachwirkung stark abflachen").
+  const DECAY_STEPS = 8;
+  const DECAY_END_INTENSITY = 0.05;
   const decayRate = Math.log(1 / DECAY_END_INTENSITY);
   const decayPoints: { t: number; intensity: number }[] = Array.from({ length: DECAY_STEPS + 1 }, (_, i) => {
     const f = i / DECAY_STEPS;
-    return { t: lerp(peakTime, end, f), intensity: Math.exp(-decayRate * f) };
+    return { t: lerp(declineStart, end, f), intensity: 0.98 * Math.exp(-decayRate * f) };
   });
 
-  const keyPoints = [...risePoints, ...decayPoints.slice(1)];
+  const keyPoints = [...risePoints, ...plateauPoints, ...decayPoints.slice(1)];
 
   const path = smoothPath(keyPoints.map((p) => [x(p.t), y(p.intensity)]));
   const areaPath = `${path} L ${WIDTH},${PLOT_BOTTOM} L 0,${PLOT_BOTTOM} Z`;

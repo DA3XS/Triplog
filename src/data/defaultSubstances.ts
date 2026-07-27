@@ -9,14 +9,14 @@ import type { Substance } from '../types';
  * Settings.
  */
 
-// Mushrooms and truffles: felt duration ~4-6h, full arc ~5-9h depending on dose.
+// Mushrooms and truffles: 1h Wirkungseintritt, 4h Wirkdauer, 1h Nachwirkung
+// (felt duration 6h), mental afterglow picks up right after.
 const psilocybinPhases = {
-  onset: { fromMin: 20, tillMin: 40 },
-  comeup: { fromMin: 30, tillMin: 60 },
-  peak: { fromMin: 90, tillMin: 150 },
-  comedown: { fromMin: 120, tillMin: 180 },
-  tail: { fromMin: 60, tillMin: 120 },
-  peakShape: 'apex' as const,
+  onset: { fromMin: 60, tillMin: 60 },
+  comeup: { fromMin: 0, tillMin: 0 },
+  peak: { fromMin: 240, tillMin: 240 },
+  comedown: { fromMin: 60, tillMin: 60 },
+  tail: { fromMin: 0, tillMin: 0 },
 };
 
 // LSD: longer and flatter throughout — felt duration ~8-12h, full arc ~9.5-15.5h.
@@ -26,7 +26,6 @@ const lsdPhases = {
   peak: { fromMin: 180, tillMin: 300 },
   comedown: { fromMin: 180, tillMin: 240 },
   tail: { fromMin: 120, tillMin: 240 },
-  peakShape: 'plateau' as const,
 };
 
 export const defaultSubstances: Substance[] = [
@@ -39,7 +38,7 @@ export const defaultSubstances: Substance[] = [
     defaultUnit: 'g',
     ...psilocybinPhases,
     doseThresholds: { light: 0.5, common: 1, strong: 2.5, heavy: 4 },
-    mentalAfterglowDays: 2,
+    mentalAfterglowDays: 1,
     toleranceResetDays: 14,
     builtin: true,
   },
@@ -52,7 +51,7 @@ export const defaultSubstances: Substance[] = [
     defaultUnit: 'g',
     ...psilocybinPhases,
     doseThresholds: { light: 5, common: 10, strong: 15, heavy: 25 },
-    mentalAfterglowDays: 2,
+    mentalAfterglowDays: 1,
     toleranceResetDays: 14,
     builtin: true,
   },
@@ -65,7 +64,7 @@ export const defaultSubstances: Substance[] = [
     defaultUnit: 'ug',
     ...lsdPhases,
     doseThresholds: { light: 25, common: 50, strong: 125, heavy: 250 },
-    mentalAfterglowDays: 2,
+    mentalAfterglowDays: 1,
     toleranceResetDays: 14,
     builtin: true,
   },
