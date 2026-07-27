@@ -10,10 +10,13 @@ interface Props {
 }
 
 const WIDTH = 600;
-const HEIGHT = 210;
+const HEIGHT = 165;
 const PAD_TOP = 12;
-// Bottom of the plotted curve/gridlines; below this: hour ticks, phase labels, clock labels.
+// Bottom of the plotted curve/gridlines; below this: hour tick labels.
 const PLOT_BOTTOM = 118;
+
+const ONSET_COLOR = '#2dd4bf';
+const TAIL_COLOR = '#f87171';
 
 export function TripCurve({ trip, substance, now }: Props) {
   const b = computeTripBoundaries(trip, substance);
@@ -27,42 +30,38 @@ export function TripCurve({ trip, substance, now }: Props) {
   const onsetEnd = b.onsetEnd.getTime();
   const comeupEnd = b.comeupEnd.getTime();
   const peakEnd = b.peakEnd.getTime();
-  const comedownEnd = b.comedownEnd.getTime();
 
-  const mid = (a: number, c: number) => a + (c - a) * 0.5;
   const lerp = (a: number, c: number, f: number) => a + (c - a) * f;
 
-  // Psilocybin ('apex'): a clear peak roughly a quarter into the Wirkdauer
-  // phase, then a gentle decline starting around its three-quarter mark.
-  // LSD ('plateau'): sustained near-full intensity across the whole
-  // Wirkdauer phase, no single defined high point, only receding once
-  // Come-down actually starts.
+  // Psilocybin ('apex'): peak is reached early in the Wirkdauer phase, then
+  // one continuous decay for the rest of the trip. LSD ('plateau'): the
+  // high point is sustained much longer before the same decay kicks in.
   const isPlateau = substance.peakShape === 'plateau';
-  const peakPoints = isPlateau
-    ? [
-        { t: lerp(comeupEnd, peakEnd, 0.2), intensity: 0.98 },
-        { t: lerp(comeupEnd, peakEnd, 0.5), intensity: 1 },
-        { t: lerp(comeupEnd, peakEnd, 0.85), intensity: 0.97 },
-      ]
-    : [
-        { t: lerp(comeupEnd, peakEnd, 0.25), intensity: 1 },
-        { t: lerp(comeupEnd, peakEnd, 0.75), intensity: 0.85 },
-      ];
-  const peakEndIntensity = isPlateau ? 0.9 : 0.6;
+  const peakTime = lerp(comeupEnd, peakEnd, isPlateau ? 0.7 : 0.2);
 
-  const keyPoints: { t: number; intensity: number }[] = [
+  // Steep rise from ingestion up to the peak.
+  const risePoints: { t: number; intensity: number }[] = [
     { t: start, intensity: 0 },
-    { t: mid(start, onsetEnd), intensity: 0.5 },
+    { t: lerp(start, onsetEnd, 0.6), intensity: 0.5 },
     { t: onsetEnd, intensity: 0.78 },
-    { t: mid(onsetEnd, comeupEnd), intensity: 0.92 },
-    { t: comeupEnd, intensity: 0.98 },
-    ...peakPoints,
-    { t: peakEnd, intensity: peakEndIntensity },
-    { t: mid(peakEnd, comedownEnd), intensity: 0.35 },
-    { t: comedownEnd, intensity: 0.2 },
-    { t: mid(comedownEnd, end), intensity: 0.14 },
-    { t: end, intensity: 0.08 },
-  ];
+    { t: lerp(onsetEnd, comeupEnd, 0.5), intensity: 0.92 },
+    { t: comeupEnd, intensity: isPlateau ? 0.99 : 0.98 },
+    { t: peakTime, intensity: 1 },
+  ].filter((p, i, arr) => i === 0 || p.t > arr[i - 1].t);
+
+  // Smooth exponential-style decay from the peak all the way to the end of
+  // the tail: falls at first, then flattens out noticeably (never fully
+  // resetting the shape of "langsam abfallen, in der Nachwirkung stark
+  // abflachen").
+  const DECAY_STEPS = 10;
+  const DECAY_END_INTENSITY = 0.04;
+  const decayRate = Math.log(1 / DECAY_END_INTENSITY);
+  const decayPoints: { t: number; intensity: number }[] = Array.from({ length: DECAY_STEPS + 1 }, (_, i) => {
+    const f = i / DECAY_STEPS;
+    return { t: lerp(peakTime, end, f), intensity: Math.exp(-decayRate * f) };
+  });
+
+  const keyPoints = [...risePoints, ...decayPoints.slice(1)];
 
   const path = smoothPath(keyPoints.map((p) => [x(p.t), y(p.intensity)]));
   const areaPath = `${path} L ${WIDTH},${PLOT_BOTTOM} L 0,${PLOT_BOTTOM} Z`;
@@ -73,13 +72,11 @@ export function TripCurve({ trip, substance, now }: Props) {
   const nowIntensity = showNow ? interpolateIntensity(keyPoints, nowMs) : 0;
   const nowY = showNow ? y(nowIntensity) : 0;
 
-  const segments = [
-    { label: 'Onset', from: start, to: onsetEnd },
-    { label: 'Come-up', from: onsetEnd, to: comeupEnd },
-    { label: 'Wirkdauer', from: comeupEnd, to: peakEnd },
-    { label: 'Come-down', from: peakEnd, to: comedownEnd },
-    { label: 'Ausklang', from: comedownEnd, to: end },
-  ].filter((s) => s.to > s.from);
+  const bands = [
+    { color: ONSET_COLOR, from: start, to: comeupEnd, label: 'Wirkungseintritt' },
+    { color: substance.color, from: comeupEnd, to: peakEnd, label: 'Wirkdauer' },
+    { color: TAIL_COLOR, from: peakEnd, to: end, label: 'Nachwirkung' },
+  ].filter((band) => band.to > band.from);
 
   const totalHours = Math.floor(total / 3_600_000);
   const hourTicks = Array.from({ length: totalHours }, (_, i) => start + (i + 1) * 3_600_000).filter(
@@ -87,65 +84,63 @@ export function TripCurve({ trip, substance, now }: Props) {
   );
 
   return (
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-auto" role="img" aria-label="Trip-Verlaufskurve">
-      <defs>
-        <linearGradient id={`fill-${trip.id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={substance.color} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={substance.color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
+    <div>
+      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full h-auto" role="img" aria-label="Trip-Verlaufskurve">
+        <defs>
+          <linearGradient id={`fill-${trip.id}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={substance.color} stopOpacity="0.5" />
+            <stop offset="100%" stopColor={substance.color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
 
-      {hourTicks.map((t, i) => (
-        <g key={i}>
-          <line x1={x(t)} x2={x(t)} y1={PAD_TOP} y2={PLOT_BOTTOM} stroke="currentColor" strokeOpacity={0.06} />
-          <text x={x(t)} y={PLOT_BOTTOM + 13} textAnchor="middle" fontSize={8} fill="currentColor" opacity={0.4}>
-            {i + 1}h
-          </text>
-        </g>
-      ))}
+        {bands.map((band, i) => (
+          <rect
+            key={i}
+            x={x(band.from)}
+            y={PAD_TOP}
+            width={Math.max(0, x(band.to) - x(band.from))}
+            height={PLOT_BOTTOM - PAD_TOP}
+            fill={band.color}
+            fillOpacity={0.16}
+          />
+        ))}
 
-      {segments.map((s, i) => (
-        <line
-          key={i}
-          x1={x(s.to)}
-          x2={x(s.to)}
-          y1={PAD_TOP}
-          y2={PLOT_BOTTOM}
-          stroke="currentColor"
-          strokeOpacity={i === segments.length - 1 ? 0 : 0.18}
-          strokeDasharray="4 4"
-        />
-      ))}
+        {hourTicks.map((t, i) => (
+          <g key={i}>
+            <line x1={x(t)} x2={x(t)} y1={PAD_TOP} y2={PLOT_BOTTOM} stroke="currentColor" strokeOpacity={0.08} />
+            <text x={x(t)} y={PLOT_BOTTOM + 13} textAnchor="middle" fontSize={8} fill="currentColor" opacity={0.4}>
+              {i + 1}h
+            </text>
+          </g>
+        ))}
 
-      <path d={areaPath} fill={`url(#fill-${trip.id})`} stroke="none" />
-      <path d={path} fill="none" stroke={substance.color} strokeWidth={3} strokeLinecap="round" />
+        <path d={areaPath} fill={`url(#fill-${trip.id})`} stroke="none" />
+        <path d={path} fill="none" stroke={substance.color} strokeWidth={3} strokeLinecap="round" />
 
-      {showNow && (
-        <g>
-          <line x1={nowX} x2={nowX} y1={PAD_TOP} y2={PLOT_BOTTOM} stroke={substance.color} strokeOpacity={0.5} />
-          <circle cx={nowX} cy={nowY} r={5} fill={substance.color} stroke="white" strokeWidth={1.5} />
-        </g>
-      )}
+        {showNow && (
+          <g>
+            <line x1={nowX} x2={nowX} y1={PAD_TOP} y2={PLOT_BOTTOM} stroke={substance.color} strokeOpacity={0.5} />
+            <circle cx={nowX} cy={nowY} r={5} fill={substance.color} stroke="white" strokeWidth={1.5} />
+          </g>
+        )}
 
-      {segments.map((s, i) => {
-        const isFirst = i === 0;
-        const isLast = i === segments.length - 1;
-        const anchor = isFirst ? 'start' : isLast ? 'end' : 'middle';
-        const textX = isFirst ? x(s.from) : isLast ? x(s.to) : (x(s.from) + x(s.to)) / 2;
-        return (
-          <text key={i} x={textX} y={PLOT_BOTTOM + 34} textAnchor={anchor} fontSize={11} fill="currentColor" opacity={0.65}>
-            {s.label}
-          </text>
-        );
-      })}
+        <text x={x(start)} y={PLOT_BOTTOM + 30} fontSize={10} fill="currentColor" opacity={0.5} textAnchor="start">
+          {formatTime(b.start)}
+        </text>
+        <text x={x(end)} y={PLOT_BOTTOM + 30} fontSize={10} fill="currentColor" opacity={0.5} textAnchor="end">
+          {formatTime(b.tailEnd)}
+        </text>
+      </svg>
 
-      <text x={x(start)} y={PLOT_BOTTOM + 52} fontSize={10} fill="currentColor" opacity={0.5} textAnchor="start">
-        {formatTime(b.start)}
-      </text>
-      <text x={x(end)} y={PLOT_BOTTOM + 52} fontSize={10} fill="currentColor" opacity={0.5} textAnchor="end">
-        {formatTime(b.tailEnd)}
-      </text>
-    </svg>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center mt-1">
+        {bands.map((band, i) => (
+          <div key={i} className="flex items-center gap-1.5 text-xs text-black/60 dark:text-white/60">
+            <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: band.color }} />
+            {band.label}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
