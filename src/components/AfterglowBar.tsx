@@ -15,7 +15,7 @@ export function AfterglowBar({ trip, substance, now }: Props) {
 
   const pct = (t: number) => (Math.min(Math.max(t, start), b.toleranceResetEnd.getTime()) - start) / total * 100;
 
-  const wTrip = pct(b.aftereffectsEnd.getTime());
+  const wTrip = pct(b.tailEnd.getTime());
   const wAfterglow = pct(b.afterglowEnd.getTime()) - wTrip;
   const wTolerance = 100 - wTrip - wAfterglow;
   const nowPct = pct(now.getTime());

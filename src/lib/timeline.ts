@@ -55,8 +55,12 @@ function interpolatePhase(range: { fromMin: number; tillMin: number }, factor: n
 export interface TripBoundaries {
   start: Date;
   onsetEnd: Date;
-  durationEnd: Date;
-  aftereffectsEnd: Date;
+  comeupEnd: Date;
+  peakEnd: Date;
+  comedownEnd: Date;
+  /** End of the hours-scale pharmacological effects (tail/Ausklang). */
+  tailEnd: Date;
+  /** End of the days-scale mental afterglow window. */
   afterglowEnd: Date;
   toleranceResetEnd: Date;
 }
@@ -65,17 +69,22 @@ export interface TripBoundaries {
 export function computeTripBoundaries(trip: Trip, substance: Substance): TripBoundaries {
   const factor = doseScaleFactor(substance, trip.amountValue, trip.amountUnit);
   const start = new Date(trip.startTime);
+
   const onsetMin = interpolatePhase(substance.onset, factor);
-  const durationMin = interpolatePhase(substance.duration, factor);
-  const aftereffectsMin = interpolatePhase(substance.aftereffects, factor);
+  const comeupMin = interpolatePhase(substance.comeup, factor);
+  const peakMin = interpolatePhase(substance.peak, factor);
+  const comedownMin = interpolatePhase(substance.comedown, factor);
+  const tailMin = interpolatePhase(substance.tail, factor);
 
   const onsetEnd = new Date(start.getTime() + onsetMin * 60_000);
-  const durationEnd = new Date(onsetEnd.getTime() + durationMin * 60_000);
-  const aftereffectsEnd = new Date(durationEnd.getTime() + aftereffectsMin * 60_000);
+  const comeupEnd = new Date(onsetEnd.getTime() + comeupMin * 60_000);
+  const peakEnd = new Date(comeupEnd.getTime() + peakMin * 60_000);
+  const comedownEnd = new Date(peakEnd.getTime() + comedownMin * 60_000);
+  const tailEnd = new Date(comedownEnd.getTime() + tailMin * 60_000);
   const afterglowEnd = new Date(start.getTime() + substance.mentalAfterglowDays * 86_400_000);
   const toleranceResetEnd = new Date(start.getTime() + substance.toleranceResetDays * 86_400_000);
 
-  return { start, onsetEnd, durationEnd, aftereffectsEnd, afterglowEnd, toleranceResetEnd };
+  return { start, onsetEnd, comeupEnd, peakEnd, comedownEnd, tailEnd, afterglowEnd, toleranceResetEnd };
 }
 
 export interface TripPhaseInfo {
@@ -97,12 +106,14 @@ export function getTripPhaseAt(trip: Trip, substance: Substance, now: Date): Tri
 
   if (t < b.start.getTime()) return { phase: 'upcoming', progress: 0, boundaries: b };
   if (t < b.onsetEnd.getTime()) return { phase: 'onset', progress: frame(b.start, b.onsetEnd), boundaries: b };
-  if (t < b.durationEnd.getTime())
-    return { phase: 'duration', progress: frame(b.onsetEnd, b.durationEnd), boundaries: b };
-  if (t < b.aftereffectsEnd.getTime())
-    return { phase: 'aftereffects', progress: frame(b.durationEnd, b.aftereffectsEnd), boundaries: b };
+  if (t < b.comeupEnd.getTime())
+    return { phase: 'comeup', progress: frame(b.onsetEnd, b.comeupEnd), boundaries: b };
+  if (t < b.peakEnd.getTime()) return { phase: 'peak', progress: frame(b.comeupEnd, b.peakEnd), boundaries: b };
+  if (t < b.comedownEnd.getTime())
+    return { phase: 'comedown', progress: frame(b.peakEnd, b.comedownEnd), boundaries: b };
+  if (t < b.tailEnd.getTime()) return { phase: 'tail', progress: frame(b.comedownEnd, b.tailEnd), boundaries: b };
   if (t < b.afterglowEnd.getTime())
-    return { phase: 'afterglow', progress: frame(b.aftereffectsEnd, b.afterglowEnd), boundaries: b };
+    return { phase: 'afterglow', progress: frame(b.tailEnd, b.afterglowEnd), boundaries: b };
   if (t < b.toleranceResetEnd.getTime())
     return { phase: 'tolerance', progress: frame(b.afterglowEnd, b.toleranceResetEnd), boundaries: b };
   return { phase: 'ready', progress: 1, boundaries: b };
@@ -113,9 +124,11 @@ const PHASE_SEVERITY: Record<TripPhase, number> = {
   ready: 0,
   tolerance: 1,
   afterglow: 2,
-  aftereffects: 3,
-  duration: 4,
-  onset: 5,
+  tail: 3,
+  comedown: 4,
+  comeup: 5,
+  onset: 6,
+  peak: 7,
 };
 
 export interface OverallStatus {

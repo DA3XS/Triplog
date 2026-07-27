@@ -54,7 +54,7 @@ export function DayDetailSheet({ day, info, substancesById, onClose }: Props) {
                   </div>
                   <div className="text-xs text-black/50 dark:text-white/50 mt-1 flex flex-col gap-0.5">
                     <span>Start: {formatDateTime(b.start)}</span>
-                    <span>Wirkung endet: {formatDateTime(b.aftereffectsEnd)}</span>
+                    <span>Wirkung endet: {formatDateTime(b.tailEnd)}</span>
                     <span>Afterglow bis: {formatDate(b.afterglowEnd)}</span>
                     <span>Toleranz-Reset: {formatDate(b.toleranceResetEnd)}</span>
                   </div>

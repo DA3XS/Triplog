@@ -33,8 +33,10 @@ export function SettingsView() {
       const result = await importOpenmindExport(text);
       setMessage(
         `Openmind-Import: ${result.importedTrips} Trips übernommen` +
-          (result.newSubstances.length ? `, neue Substanzen: ${result.newSubstances.join(', ')}` : '') +
-          (result.skipped ? `, ${result.skipped} übersprungen` : '') +
+          (result.skippedUnsupportedSubstances.length
+            ? `. Nicht unterstützte Substanzen übersprungen: ${result.skippedUnsupportedSubstances.join(', ')}`
+            : '') +
+          (result.skipped ? ` (${result.skipped} Einträge insgesamt übersprungen)` : '') +
           '.',
       );
     } catch (err) {

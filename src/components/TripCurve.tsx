@@ -10,31 +10,37 @@ interface Props {
 }
 
 const WIDTH = 600;
-const HEIGHT = 160;
+const HEIGHT = 170;
 const PAD_TOP = 12;
 const PAD_BOTTOM = 34;
 
 export function TripCurve({ trip, substance, now }: Props) {
   const b = computeTripBoundaries(trip, substance);
   const start = b.start.getTime();
-  const end = b.aftereffectsEnd.getTime();
+  const end = b.tailEnd.getTime();
   const total = Math.max(1, end - start);
 
   const x = (t: number) => ((t - start) / total) * WIDTH;
   const y = (intensity: number) => PAD_TOP + (1 - intensity) * (HEIGHT - PAD_TOP - PAD_BOTTOM);
 
   const onsetEnd = b.onsetEnd.getTime();
-  const durationEnd = b.durationEnd.getTime();
-  const peakT = onsetEnd + (durationEnd - onsetEnd) * 0.35;
-  const comedownT = durationEnd + (end - durationEnd) * 0.35;
+  const comeupEnd = b.comeupEnd.getTime();
+  const peakEnd = b.peakEnd.getTime();
+  const comedownEnd = b.comedownEnd.getTime();
+
+  const mid = (a: number, c: number) => a + (c - a) * 0.5;
 
   const keyPoints: { t: number; intensity: number }[] = [
     { t: start, intensity: 0 },
-    { t: start + (onsetEnd - start) * 0.6, intensity: 0.55 },
-    { t: onsetEnd, intensity: 0.92 },
-    { t: peakT, intensity: 1 },
-    { t: durationEnd, intensity: 0.55 },
-    { t: comedownT, intensity: 0.22 },
+    { t: mid(start, onsetEnd), intensity: 0.15 },
+    { t: onsetEnd, intensity: 0.32 },
+    { t: mid(onsetEnd, comeupEnd), intensity: 0.6 },
+    { t: comeupEnd, intensity: 0.85 },
+    { t: mid(comeupEnd, peakEnd), intensity: 1 },
+    { t: peakEnd, intensity: 0.85 },
+    { t: mid(peakEnd, comedownEnd), intensity: 0.5 },
+    { t: comedownEnd, intensity: 0.25 },
+    { t: mid(comedownEnd, end), intensity: 0.1 },
     { t: end, intensity: 0.03 },
   ];
 
@@ -48,9 +54,11 @@ export function TripCurve({ trip, substance, now }: Props) {
   const nowY = showNow ? y(nowIntensity) : 0;
 
   const segments = [
-    { label: 'Eintrittsphase', from: start, to: onsetEnd },
-    { label: 'Wirkdauer', from: onsetEnd, to: durationEnd },
-    { label: 'Nachwirkung', from: durationEnd, to: end },
+    { label: 'Onset', from: start, to: onsetEnd },
+    { label: 'Come-up', from: onsetEnd, to: comeupEnd },
+    { label: 'Peak', from: comeupEnd, to: peakEnd },
+    { label: 'Come-down', from: peakEnd, to: comedownEnd },
+    { label: 'Ausklang', from: comedownEnd, to: end },
   ];
 
   return (
@@ -91,7 +99,7 @@ export function TripCurve({ trip, substance, now }: Props) {
         const anchor = isFirst ? 'start' : isLast ? 'end' : 'middle';
         const textX = isFirst ? x(s.from) : isLast ? x(s.to) : (x(s.from) + x(s.to)) / 2;
         return (
-          <text key={i} x={textX} y={HEIGHT - 18} textAnchor={anchor} fontSize={11} fill="currentColor" opacity={0.6}>
+          <text key={i} x={textX} y={HEIGHT - 18} textAnchor={anchor} fontSize={10} fill="currentColor" opacity={0.6}>
             {s.label}
           </text>
         );
@@ -101,7 +109,7 @@ export function TripCurve({ trip, substance, now }: Props) {
         {formatTime(b.start)}
       </text>
       <text x={x(end)} y={HEIGHT - 4} fontSize={10} fill="currentColor" opacity={0.5} textAnchor="end">
-        {formatTime(b.aftereffectsEnd)}
+        {formatTime(b.tailEnd)}
       </text>
     </svg>
   );

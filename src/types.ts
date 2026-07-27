@@ -17,12 +17,16 @@ export interface Substance {
   /** Controls display order in pickers; lower sorts first. */
   order: number;
   defaultUnit: Unit;
-  /** Time from ingestion until effects start being felt. */
+  /** First physical/mental signals after ingestion. */
   onset: PhaseRange;
-  /** Time from end of onset until the main effects taper off. */
-  duration: PhaseRange;
-  /** Residual/comedown effects after the main duration (hours-scale). */
-  aftereffects: PhaseRange;
+  /** Effects visibly building up (visuals, mood, energy). */
+  comeup: PhaseRange;
+  /** Full effects — most intense phase. */
+  peak: PhaseRange;
+  /** Effects gradually receding, introspection often still present. */
+  comedown: PhaseRange;
+  /** Final tail-off (hours-scale), not to be confused with the day-scale mental afterglow below. */
+  tail: PhaseRange;
   /** Dose thresholds in the substance's defaultUnit, used to label a trip's intensity. */
   doseThresholds: Record<DoseLevel, number>;
   /**
@@ -61,7 +65,16 @@ export interface AppMeta {
   value: string;
 }
 
-export type TripPhase = 'upcoming' | 'onset' | 'duration' | 'aftereffects' | 'afterglow' | 'tolerance' | 'ready';
+export type TripPhase =
+  | 'upcoming'
+  | 'onset'
+  | 'comeup'
+  | 'peak'
+  | 'comedown'
+  | 'tail'
+  | 'afterglow'
+  | 'tolerance'
+  | 'ready';
 
 export interface BackupFile {
   format: 'triplog-backup';

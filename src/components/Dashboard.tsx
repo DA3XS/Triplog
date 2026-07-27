@@ -9,9 +9,11 @@ import type { TripPhase } from '../types';
 
 const PHASE_LABEL: Record<TripPhase, string> = {
   upcoming: 'Geplant',
-  onset: 'Anflutend',
-  duration: 'Im Trip',
-  aftereffects: 'Nachwirkung',
+  onset: 'Onset',
+  comeup: 'Come-up',
+  peak: 'Peak',
+  comedown: 'Come-down',
+  tail: 'Ausklang',
   afterglow: 'Afterglow',
   tolerance: 'Erholungsphase',
   ready: 'Bereit',
@@ -20,12 +22,16 @@ const PHASE_LABEL: Record<TripPhase, string> = {
 const PHASE_EMOJI: Record<TripPhase, string> = {
   upcoming: '🕓',
   onset: '🌀',
-  duration: '🍄',
-  aftereffects: '🌙',
+  comeup: '📈',
+  peak: '🍄',
+  comedown: '📉',
+  tail: '🌙',
   afterglow: '🌅',
   tolerance: '⏳',
   ready: '✅',
 };
+
+const PHARMACOLOGICAL_PHASES: TripPhase[] = ['onset', 'comeup', 'peak', 'comedown', 'tail'];
 
 interface Props {
   onNewTrip: () => void;
@@ -43,8 +49,7 @@ export function Dashboard({ onNewTrip }: Props) {
   const activePhaseInfo =
     status.activeTrip && activeSubstance ? getTripPhaseAt(status.activeTrip, activeSubstance, now) : null;
 
-  const inPharmacologicalEffect =
-    activePhaseInfo && ['onset', 'duration', 'aftereffects'].includes(activePhaseInfo.phase);
+  const inPharmacologicalEffect = activePhaseInfo && PHARMACOLOGICAL_PHASES.includes(activePhaseInfo.phase);
 
   return (
     <div className="flex flex-col gap-5">
@@ -121,7 +126,7 @@ function StatusDetail({
   nextPossibleTripDate: Date | null;
 }) {
   const amountText = formatAmount(amountValue, amountUnit);
-  if (phase === 'onset' || phase === 'duration' || phase === 'aftereffects') {
+  if (PHARMACOLOGICAL_PHASES.includes(phase)) {
     return (
       <div>
         {substanceEmoji} {substanceName} · {amountText} — aktuelle Phase: {PHASE_LABEL[phase]}

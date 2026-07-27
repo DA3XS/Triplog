@@ -32,13 +32,13 @@ export function getDayInfo(day: Date, trips: Trip[], substancesById: Map<string,
     let localStatus: DayStatus;
     let localIntensity: number;
 
-    if (b.start.getTime() < dayEnd && b.aftereffectsEnd.getTime() > dayStart) {
+    if (b.start.getTime() < dayEnd && b.tailEnd.getTime() > dayStart) {
       localStatus = 'trip';
       localIntensity = 1;
-    } else if (b.aftereffectsEnd.getTime() <= dayStart && b.afterglowEnd.getTime() > dayStart) {
+    } else if (b.tailEnd.getTime() <= dayStart && b.afterglowEnd.getTime() > dayStart) {
       localStatus = 'afterglow';
-      const span = b.afterglowEnd.getTime() - b.aftereffectsEnd.getTime();
-      const elapsed = dayStart - b.aftereffectsEnd.getTime();
+      const span = b.afterglowEnd.getTime() - b.tailEnd.getTime();
+      const elapsed = dayStart - b.tailEnd.getTime();
       localIntensity = span > 0 ? 1 - elapsed / span : 1;
     } else if (b.afterglowEnd.getTime() <= dayStart && b.toleranceResetEnd.getTime() > dayStart) {
       localStatus = 'tolerance';
