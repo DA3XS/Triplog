@@ -19,13 +19,15 @@ const psilocybinPhases = {
   tail: { fromMin: 0, tillMin: 0 },
 };
 
-// LSD: longer and flatter throughout — felt duration ~8-12h, full arc ~9.5-15.5h.
+// LSD: same 1:4:1 shape as psilocybin, just expanded to its longer
+// duration — 2h Wirkungseintritt, 8h Wirkdauer (peak at 5h), 2h
+// Nachwirkung (felt duration 12h).
 const lsdPhases = {
-  onset: { fromMin: 30, tillMin: 60 },
-  comeup: { fromMin: 60, tillMin: 90 },
-  peak: { fromMin: 180, tillMin: 300 },
-  comedown: { fromMin: 180, tillMin: 240 },
-  tail: { fromMin: 120, tillMin: 240 },
+  onset: { fromMin: 120, tillMin: 120 },
+  comeup: { fromMin: 0, tillMin: 0 },
+  peak: { fromMin: 480, tillMin: 480 },
+  comedown: { fromMin: 120, tillMin: 120 },
+  tail: { fromMin: 0, tillMin: 0 },
 };
 
 export const defaultSubstances: Substance[] = [
