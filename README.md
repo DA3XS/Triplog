@@ -31,5 +31,48 @@ npm run lint     # oxlint
 
 ## Deployment
 
+Die App ist eine reine statische Single-Page-App (kein Backend, kein eigenes Client-Routing) und kann
+auf jede Art von Webserver deployed werden.
+
+### GitHub Pages
+
 Ein GitHub-Actions-Workflow (`.github/workflows/deploy.yml`) baut die App bei jedem Push auf `main` und
 deployed sie als statische Seite auf GitHub Pages (Repo-Einstellungen → Pages → Source: GitHub Actions).
+
+### Eigener Server mit Docker
+
+```bash
+docker compose up -d --build
+```
+
+Läuft danach auf Port 8080 (siehe `docker-compose.yml`, anpassbar). Baut die App in einer Node-Stage
+und serviert sie anschliessend mit nginx (`nginx.conf`).
+
+Ohne Compose direkt mit Docker:
+
+```bash
+docker build -t triplog .
+docker run -d --name triplog -p 8080:80 --restart unless-stopped triplog
+```
+
+### Eigener Server ohne Docker (nginx/Apache)
+
+```bash
+npm install
+npm run build
+```
+
+Den entstehenden Ordner `dist/` auf den Server kopieren und mit einem beliebigen statischen Webserver
+ausliefern, z. B. nginx:
+
+```nginx
+server {
+    listen 80;
+    server_name triplog.deine-domain.ch;
+    root /var/www/triplog;
+    index index.html;
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+```
