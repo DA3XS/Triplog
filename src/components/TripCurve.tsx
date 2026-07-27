@@ -30,16 +30,22 @@ export function TripCurve({ trip, substance, now }: Props) {
   const comedownEnd = b.comedownEnd.getTime();
 
   const mid = (a: number, c: number) => a + (c - a) * 0.5;
+  const lerp = (a: number, c: number, f: number) => a + (c - a) * f;
 
-  // Fast rise to plateau within onset, a flat felt-effect plateau, a
-  // steady come-down, then a long, deliberately flat low tail.
+  // Fast rise to a peak roughly a quarter into the Wirkdauer phase, then a
+  // gentle decline starting around its three-quarter mark, a steady
+  // come-down, and a long, deliberately flat low tail.
+  const peakApex = lerp(comeupEnd, peakEnd, 0.25);
+  const peakFallStart = lerp(comeupEnd, peakEnd, 0.75);
+
   const keyPoints: { t: number; intensity: number }[] = [
     { t: start, intensity: 0 },
     { t: mid(start, onsetEnd), intensity: 0.55 },
-    { t: onsetEnd, intensity: 0.98 },
-    { t: mid(comeupEnd, peakEnd), intensity: 1 },
-    { t: peakEnd, intensity: 0.95 },
-    { t: mid(peakEnd, comedownEnd), intensity: 0.55 },
+    { t: onsetEnd, intensity: 0.9 },
+    { t: peakApex, intensity: 1 },
+    { t: peakFallStart, intensity: 0.85 },
+    { t: peakEnd, intensity: 0.6 },
+    { t: mid(peakEnd, comedownEnd), intensity: 0.35 },
     { t: comedownEnd, intensity: 0.2 },
     { t: mid(comedownEnd, end), intensity: 0.14 },
     { t: end, intensity: 0.08 },
