@@ -47,14 +47,14 @@ export function TripCurve({ trip, substance, now }: Props) {
     { t: peakTime, intensity: 1 },
   ].filter((p, i, arr) => i === 0 || p.t > arr[i - 1].t);
 
-  // Smooth exponential-style decay: falls at first, then flattens out
-  // noticeably towards the end ("dann abfallen bis zur 6. Stunde").
+  // Gentle, roughly steady decline from the peak down to a low tail value
+  // ("dann abfallen bis zur 6. Stunde") — a near-straight line rather than
+  // a steep early drop.
   const DECAY_STEPS = 10;
-  const DECAY_END_INTENSITY = 0.04;
-  const decayRate = Math.log(1 / DECAY_END_INTENSITY);
+  const DECAY_END_INTENSITY = 0.06;
   const decayPoints: { t: number; intensity: number }[] = Array.from({ length: DECAY_STEPS + 1 }, (_, i) => {
     const f = i / DECAY_STEPS;
-    return { t: lerp(peakTime, end, f), intensity: Math.exp(-decayRate * f) };
+    return { t: lerp(peakTime, end, f), intensity: lerp(1, DECAY_END_INTENSITY, f) };
   });
 
   const keyPoints = [...risePoints, ...decayPoints.slice(1)];
