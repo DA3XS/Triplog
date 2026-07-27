@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ensureSeedData, getMeta, setMeta } from './db';
+import { ensureSeedData, getMeta, migrateSubstances, setMeta } from './db';
 import { useTrips } from './hooks/useData';
 import { Dashboard } from './components/Dashboard';
 import { CalendarView } from './components/CalendarView';
@@ -28,6 +28,7 @@ function App() {
   useEffect(() => {
     (async () => {
       await ensureSeedData();
+      await migrateSubstances();
       const dismissed = await getMeta(WELCOME_DISMISSED_KEY);
       setWelcomeDismissed(dismissed === '1');
       setReady(true);
