@@ -4,6 +4,7 @@ import { useNow } from '../hooks/useNow';
 import { getOverallStatus, getTripPhaseAt } from '../lib/timeline';
 import { formatAmount, formatDate, formatDaysCount, formatRelativeDays } from '../lib/format';
 import { TripCurve } from './TripCurve';
+import { EffectTimer } from './EffectTimer';
 import { AfterglowBar } from './AfterglowBar';
 import type { TripFormMode } from './NewTripForm';
 import type { TripPhase } from '../types';
@@ -12,7 +13,7 @@ const PHASE_LABEL: Record<TripPhase, string> = {
   upcoming: 'Geplant',
   onset: 'Onset',
   comeup: 'Come-up',
-  peak: 'Peak',
+  peak: 'Wirkdauer',
   comedown: 'Come-down',
   tail: 'Ausklang',
   afterglow: 'Afterglow',
@@ -102,7 +103,8 @@ export function Dashboard({ onOpenTripForm }: Props) {
         </div>
 
         {status.activeTrip && activeSubstance && inPharmacologicalEffect && (
-          <div className="mt-5">
+          <div className="mt-5 flex flex-col gap-4">
+            <EffectTimer trip={status.activeTrip} substance={activeSubstance} />
             <TripCurve trip={status.activeTrip} substance={activeSubstance} now={now} />
           </div>
         )}

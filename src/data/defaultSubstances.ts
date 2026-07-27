@@ -4,17 +4,30 @@ import type { Substance } from '../types';
  * Seed substances. Phase timings (onset/comeup/peak/comedown/tail, in minutes)
  * describe a typical hours-scale trip arc; the "from" value is interpolated
  * towards the "till" value as the logged dose goes from light to heavy.
+ * The "comeup" phase is folded into a fast onset for these profiles (kept
+ * as a zero-length phase rather than removed from the schema).
  * Dose thresholds and afterglow/tolerance days are harm-reduction
  * heuristics, not medical advice — all are editable per substance in Settings.
  */
 
-// Mushrooms and truffles share the same effect-timing profile.
+// Mushrooms and truffles: quick ~1h onset, 4h felt plateau, 1h come-down,
+// then a long, flat 4h tail (felt duration ~6h, full arc ~10h).
 const psilocybinPhases = {
-  onset: { fromMin: 20, tillMin: 40 },
-  comeup: { fromMin: 30, tillMin: 60 },
-  peak: { fromMin: 90, tillMin: 150 },
-  comedown: { fromMin: 120, tillMin: 180 },
-  tail: { fromMin: 60, tillMin: 120 },
+  onset: { fromMin: 60, tillMin: 60 },
+  comeup: { fromMin: 0, tillMin: 0 },
+  peak: { fromMin: 240, tillMin: 240 },
+  comedown: { fromMin: 60, tillMin: 60 },
+  tail: { fromMin: 240, tillMin: 240 },
+};
+
+// LSD: same shape, scaled up for its longer, flatter plateau and tail
+// (felt duration ~8h, full arc ~13h).
+const lsdPhases = {
+  onset: { fromMin: 60, tillMin: 60 },
+  comeup: { fromMin: 0, tillMin: 0 },
+  peak: { fromMin: 300, tillMin: 300 },
+  comedown: { fromMin: 120, tillMin: 120 },
+  tail: { fromMin: 300, tillMin: 300 },
 };
 
 export const defaultSubstances: Substance[] = [
@@ -51,11 +64,7 @@ export const defaultSubstances: Substance[] = [
     color: '#3b82f6',
     order: 2,
     defaultUnit: 'ug',
-    onset: { fromMin: 30, tillMin: 60 },
-    comeup: { fromMin: 60, tillMin: 90 },
-    peak: { fromMin: 180, tillMin: 300 },
-    comedown: { fromMin: 180, tillMin: 240 },
-    tail: { fromMin: 120, tillMin: 240 },
+    ...lsdPhases,
     doseThresholds: { light: 25, common: 50, strong: 125, heavy: 250 },
     mentalAfterglowDays: 2,
     toleranceResetDays: 14,
