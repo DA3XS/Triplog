@@ -50,6 +50,9 @@ function App() {
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-2">
           <span className="text-2xl">🍄</span>
           <span className="text-lg font-semibold">Triplog</span>
+          <span className="ml-auto text-xs text-black/35 dark:text-white/35">
+            v{__APP_VERSION__.split('.').slice(0, 2).join('.')}
+          </span>
         </div>
       </header>
 

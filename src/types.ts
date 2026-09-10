@@ -44,6 +44,13 @@ export interface Substance {
   builtin: boolean;
 }
 
+/** One timestamped entry in a trip's journal — added during or after the trip. */
+export interface JournalEntry {
+  id: string;
+  timestamp: string; // ISO string
+  text: string;
+}
+
 export interface Trip {
   id: string;
   substanceId: string;
@@ -56,6 +63,8 @@ export interface Trip {
   amountValue: number;
   amountUnit: Unit;
   notes?: string;
+  /** Diary entries added over time, during or after the trip. */
+  journal?: JournalEntry[];
   source: 'manual' | 'import';
   createdAt: string; // ISO string
 }
