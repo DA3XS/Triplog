@@ -19,3 +19,16 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/*
+ * Tailwind's preflight sets form controls to font-size: 100%, so they
+ * inherit whatever text-size utility their wrapping label uses (often
+ * text-sm/14px here). Below 16px, iOS Safari auto-zooms the page on focus
+ * and the zoom can stay stuck after blur. Force 16px on all controls to
+ * prevent that, regardless of the surrounding label's font size.
+ */
+input,
+select,
+textarea {
+  font-size: 16px;
+}

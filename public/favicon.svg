@@ -1,3 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <text x="50" y="72" font-size="72" text-anchor="middle">🍄</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="221" y="288" width="70" height="150" rx="32" fill="#fff9f0"/>
+  <path d="M 108,308 C 108,176 172,96 256,96 C 340,96 404,176 404,308 C 404,336 380,340 256,340 C 132,340 108,336 108,308 Z" fill="#ffffff"/>
+  <circle cx="196" cy="196" r="16" fill="#c084fc" opacity="0.55"/>
+  <circle cx="288" cy="168" r="12" fill="#c084fc" opacity="0.55"/>
+  <circle cx="330" cy="232" r="14" fill="#c084fc" opacity="0.55"/>
+  <circle cx="230" cy="256" r="10" fill="#c084fc" opacity="0.45"/>
 </svg>
