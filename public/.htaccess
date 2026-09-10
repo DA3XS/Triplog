@@ -8,11 +8,18 @@
     Header set Expires "0"
   </FilesMatch>
 
-  # Hashed build assets never change once built, so they can be cached
-  # forever - a new build gets new filenames anyway.
-  <FilesMatch "\.(js|css)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
+  # The service worker script (and its Workbox helper) must always be
+  # revalidated too, otherwise the browser would never notice a new
+  # version was deployed - same failure mode as a cached index.html.
+  <FilesMatch "^(sw|workbox-.*)\.js$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
   </FilesMatch>
+
+  # Hashed build assets (in /assets/) never change once built - a new
+  # build gets new filenames anyway - so these can be cached forever.
+  <If "%{REQUEST_URI} =~ m#/assets/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
 </IfModule>
 
 <IfModule mod_expires.c>

@@ -9,6 +9,7 @@ Persönliches Trip-Tagebuch für psychedelische Substanzen (Mushrooms, Truffles,
   wieder sinnvoll".
 - **Import**: Bestehende Daten aus der Openmind-App (JSON-Export) übernehmen.
 - **Backup**: Alle Daten als JSON exportieren/importieren.
+- **Offline nutzbar**: Als installierbare PWA mit Service Worker – funktioniert auch ganz ohne Netz.
 
 ## Datenschutz
 
@@ -80,6 +81,11 @@ server {
     location = /index.html {
         add_header Cache-Control "no-cache, no-store, must-revalidate";
     }
+    # Der Service Worker (und sein Workbox-Helper) müssen ebenfalls immer
+    # frisch geprüft werden, sonst merkt der Browser nie, dass es ein Update gibt.
+    location ~ ^/(sw|workbox-.*)\.js$ {
+        add_header Cache-Control "no-cache";
+    }
     location /assets/ {
         add_header Cache-Control "public, max-age=31536000, immutable";
     }
@@ -90,6 +96,18 @@ Auf klassischem Shared Hosting (per FTP, Apache/LiteSpeed) übernimmt das automa
 `public/.htaccess` (landet beim Build in `dist/.htaccess` – beim Hochladen nicht vergessen, sie ist eine
 versteckte Datei, im FTP-Client ggf. "versteckte Dateien anzeigen" aktivieren).
 
-**Wichtig ohne diese Cache-Regel**: Browser (und v.a. iOS "Zum Home-Bildschirm hinzufügen"-Apps) können
-`index.html` sehr hartnäckig cachen. Da jeder Build neue Dateinamen für JS/CSS erzeugt, zeigt eine
-gecachte alte `index.html` dann dauerhaft die vorherige Version, obwohl neue Dateien hochgeladen wurden.
+**Wichtig ohne diese Cache-Regeln**: Browser (und v.a. iOS "Zum Home-Bildschirm hinzufügen"-Apps) können
+`index.html` und den Service Worker sehr hartnäckig cachen. Da jeder Build neue Dateinamen für JS/CSS
+erzeugt, zeigt eine gecachte alte `index.html` dann dauerhaft die vorherige Version, obwohl neue Dateien
+hochgeladen wurden.
+
+## Offline-Nutzung (PWA)
+
+Die App registriert einen Service Worker ([`vite-plugin-pwa`](https://vite-pwa-org.netlify.app/)), der
+den App-Code beim ersten Besuch für die Offline-Nutzung zwischenspeichert. Deine Daten liegen ohnehin
+immer lokal (IndexedDB) und sind unabhängig davon offline verfügbar.
+
+- Wird eine neue Version erkannt, erscheint unten ein dezentes Banner "Neue Version verfügbar" mit einem
+  Button – die App lädt **nicht** automatisch neu, damit kein unbeabsichtigt offener Eintrag verloren geht.
+- Über "Zum Home-Bildschirm hinzufügen" (iOS) bzw. "App installieren" (Android/Desktop-Chrome) startet
+  sie im eigenen Fenster ohne Browserleiste, inkl. App-Icon.
