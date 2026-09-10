@@ -1,0 +1,21 @@
+# Never cache the HTML shell, so a new deploy is picked up immediately
+# instead of being served stale from disk/WebKit caches (this is what
+# caused iOS home-screen "app" icons to keep showing an old version).
+<IfModule mod_headers.c>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Hashed build assets never change once built, so they can be cached
+  # forever - a new build gets new filenames anyway.
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>

@@ -74,5 +74,22 @@ server {
     location / {
         try_files $uri $uri/ =404;
     }
+
+    # index.html nie cachen, damit Updates sofort ankommen (siehe unten) -
+    # die gehashten Dateien in /assets/ dürfen dagegen ewig gecacht werden.
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
 }
 ```
+
+Auf klassischem Shared Hosting (per FTP, Apache/LiteSpeed) übernimmt das automatisch die mitgelieferte
+`public/.htaccess` (landet beim Build in `dist/.htaccess` – beim Hochladen nicht vergessen, sie ist eine
+versteckte Datei, im FTP-Client ggf. "versteckte Dateien anzeigen" aktivieren).
+
+**Wichtig ohne diese Cache-Regel**: Browser (und v.a. iOS "Zum Home-Bildschirm hinzufügen"-Apps) können
+`index.html` sehr hartnäckig cachen. Da jeder Build neue Dateinamen für JS/CSS erzeugt, zeigt eine
+gecachte alte `index.html` dann dauerhaft die vorherige Version, obwohl neue Dateien hochgeladen wurden.
