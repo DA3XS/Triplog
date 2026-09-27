@@ -102,7 +102,7 @@ export function NewTripForm({ mode, onClose }: Props) {
           <select
             value={effectiveSubstanceId}
             onChange={(e) => setSubstanceId(e.target.value)}
-            className="rounded-lg border border-black/15 dark:border-white/15 bg-transparent px-3 py-2"
+            className="rounded-lg border border-black/15 dark:border-white/15 bg-white dark:bg-neutral-900 text-black dark:text-white px-3 py-2"
           >
             {substances.map((s) => (
               <option key={s.id} value={s.id}>
@@ -129,7 +129,7 @@ export function NewTripForm({ mode, onClose }: Props) {
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value as Unit)}
-              className="rounded-lg border border-black/15 dark:border-white/15 bg-transparent px-3 py-2"
+              className="rounded-lg border border-black/15 dark:border-white/15 bg-white dark:bg-neutral-900 text-black dark:text-white px-3 py-2"
             >
               <option value="g">g</option>
               <option value="mg">mg</option>

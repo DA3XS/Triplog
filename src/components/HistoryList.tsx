@@ -2,10 +2,9 @@ import { useMemo, useState } from 'react';
 import { useSortedSubstances, useSubstancesById, useTrips } from '../hooks/useData';
 import { db } from '../db';
 import { formatAmount, formatDateTime } from '../lib/format';
-import { convertAmount, DOSE_LEVEL_LABEL, getDoseLevel } from '../lib/timeline';
+import { convertAmount, DOSE_LEVEL_COLOR, DOSE_LEVEL_LABEL, DOSE_LEVEL_TEXT_COLOR, getDoseLevel } from '../lib/timeline';
 import { TripJournal } from './TripJournal';
 import { TripRating } from './TripRating';
-import { DoseScaleBar } from './DoseScaleBar';
 import { Smiley } from './Smiley';
 import { RATING_COLORS, RATING_MOODS, RATING_LABELS } from '../lib/rating';
 import type { Substance, Trip } from '../types';
@@ -46,7 +45,10 @@ export function HistoryList() {
                     <span className="text-black/50 dark:text-white/50 font-normal">
                       {formatAmount(trip.amountValue, trip.amountUnit)}
                     </span>
-                    <span className="text-xs rounded-full px-2 py-0.5 bg-black/5 dark:bg-white/10 text-black/60 dark:text-white/60">
+                    <span
+                      className="text-xs rounded-full px-2 py-0.5 font-medium"
+                      style={{ backgroundColor: DOSE_LEVEL_COLOR[doseLevel], color: DOSE_LEVEL_TEXT_COLOR[doseLevel] }}
+                    >
                       {DOSE_LEVEL_LABEL[doseLevel]}
                     </span>
                     {trip.source === 'import' && (
@@ -62,9 +64,6 @@ export function HistoryList() {
                   </div>
                   <div className="text-xs text-black/50 dark:text-white/50 mt-1">
                     {formatDateTime(new Date(trip.startTime))}
-                  </div>
-                  <div className="mt-2 max-w-40">
-                    <DoseScaleBar level={doseLevel} size="compact" />
                   </div>
                   {trip.notes && <div className="text-sm mt-2 whitespace-pre-wrap">{trip.notes}</div>}
                 </div>

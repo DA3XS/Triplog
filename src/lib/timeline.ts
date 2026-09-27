@@ -22,6 +22,24 @@ export const DOSE_LEVEL_LABEL: Record<DoseLevel, string> = {
   heroic: 'Heroic Dose',
 };
 
+/** Light-to-dark purple scale, one color per dose level, used for the DoseScaleBar and level badges. */
+export const DOSE_LEVEL_COLOR: Record<DoseLevel, string> = {
+  low: '#ddd6fe',
+  medium: '#c4b5fd',
+  high: '#a78bfa',
+  ultraHigh: '#7c3aed',
+  heroic: '#5b21b6',
+};
+
+/** Readable text color against the corresponding DOSE_LEVEL_COLOR background. */
+export const DOSE_LEVEL_TEXT_COLOR: Record<DoseLevel, string> = {
+  low: '#3b0764',
+  medium: '#3b0764',
+  high: '#ffffff',
+  ultraHigh: '#ffffff',
+  heroic: '#ffffff',
+};
+
 /**
  * A continuous 0..1 factor describing how strong a dose is relative to the
  * substance's low/medium/high/ultraHigh/heroic thresholds. Used to stretch
