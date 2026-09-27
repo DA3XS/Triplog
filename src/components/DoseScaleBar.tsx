@@ -7,7 +7,7 @@ interface Props {
   size?: 'full' | 'compact';
 }
 
-const SEGMENT_COLORS = ['#e9d5ff', '#d8b4fe', '#c084fc', '#a855f7', '#7c3aed'];
+const SEGMENT_COLORS = ['#ddd6fe', '#c4b5fd', '#a78bfa', '#7c3aed', '#5b21b6'];
 
 export function DoseScaleBar({ level, size = 'full' }: Props) {
   const activeIndex = DOSE_LEVEL_ORDER.indexOf(level);
@@ -15,20 +15,27 @@ export function DoseScaleBar({ level, size = 'full' }: Props) {
 
   return (
     <div>
+      {!compact && (
+        <div className="flex w-full">
+          {SEGMENT_COLORS.map((_, i) => (
+            <div key={i} className="flex-1 flex justify-center">
+              {i === activeIndex && <span className="text-violet-600 dark:text-violet-400 text-xs leading-none">▼</span>}
+            </div>
+          ))}
+        </div>
+      )}
       <div className={`flex w-full overflow-hidden rounded-lg ${compact ? 'h-2' : 'h-9'}`}>
         {SEGMENT_COLORS.map((color, i) => {
           const active = i === activeIndex;
           return (
             <div
               key={i}
-              className={`flex-1 flex items-center justify-center font-bold text-white transition-opacity ${
-                compact ? '' : 'text-sm'
-              }`}
+              className={`relative flex-1 flex items-center justify-center font-bold text-white ${compact ? '' : 'text-sm'}`}
               style={{
                 backgroundColor: color,
-                opacity: active ? 1 : 0.3,
                 outline: active && !compact ? '2px solid white' : 'none',
-                outlineOffset: '-2px',
+                outlineOffset: '-3px',
+                zIndex: active ? 1 : 0,
               }}
             >
               {!compact && i + 1}
