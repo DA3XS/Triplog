@@ -11,22 +11,34 @@ export function normalizedAmount(substance: Substance, value: number, unit: Unit
   return convertAmount(value, unit, substance.defaultUnit);
 }
 
+/** Dose levels in ascending order — index (0-4) doubles as the "1-5" scale shown in the UI. */
+export const DOSE_LEVEL_ORDER: DoseLevel[] = ['low', 'medium', 'high', 'ultraHigh', 'heroic'];
+
+export const DOSE_LEVEL_LABEL: Record<DoseLevel, string> = {
+  low: 'Low Dose',
+  medium: 'Medium Dose',
+  high: 'High Dose',
+  ultraHigh: 'Ultra High',
+  heroic: 'Heroic Dose',
+};
+
 /**
  * A continuous 0..1 factor describing how strong a dose is relative to the
- * substance's light/common/strong/heavy thresholds. Used to stretch the
- * effect timeline for bigger doses.
+ * substance's low/medium/high/ultraHigh/heroic thresholds. Used to stretch
+ * the effect timeline for bigger doses.
  */
 export function doseScaleFactor(substance: Substance, value: number, unit: Unit): number {
   const amount = normalizedAmount(substance, value, unit);
-  const { light, common, strong, heavy } = substance.doseThresholds;
+  const { low, medium, high, ultraHigh, heroic } = substance.doseThresholds;
   const points: [number, number][] = [
     [0, 0],
-    [light, 0.25],
-    [common, 0.5],
-    [strong, 0.75],
-    [heavy, 1],
+    [low, 0.2],
+    [medium, 0.4],
+    [high, 0.6],
+    [ultraHigh, 0.8],
+    [heroic, 1],
   ];
-  if (amount >= heavy) return 1;
+  if (amount >= heroic) return 1;
   for (let i = 0; i < points.length - 1; i++) {
     const [x0, y0] = points[i];
     const [x1, y1] = points[i + 1];
@@ -40,12 +52,12 @@ export function doseScaleFactor(substance: Substance, value: number, unit: Unit)
 
 export function getDoseLevel(substance: Substance, value: number, unit: Unit): DoseLevel {
   const amount = normalizedAmount(substance, value, unit);
-  const { light, common, strong } = substance.doseThresholds;
-  if (amount >= substance.doseThresholds.heavy) return 'heavy';
-  if (amount >= strong) return 'strong';
-  if (amount >= common) return 'common';
-  if (amount >= light) return 'light';
-  return 'light';
+  const { medium, high, ultraHigh, heroic } = substance.doseThresholds;
+  if (amount >= heroic) return 'heroic';
+  if (amount >= ultraHigh) return 'ultraHigh';
+  if (amount >= high) return 'high';
+  if (amount >= medium) return 'medium';
+  return 'low';
 }
 
 function interpolatePhase(range: { fromMin: number; tillMin: number }, factor: number): number {

@@ -1,6 +1,6 @@
 export type Unit = 'g' | 'mg' | 'ug';
 
-export type DoseLevel = 'light' | 'common' | 'strong' | 'heavy';
+export type DoseLevel = 'low' | 'medium' | 'high' | 'ultraHigh' | 'heroic';
 
 /** A minute-range for one phase of a trip's effect timeline. */
 export interface PhaseRange {
@@ -65,6 +65,8 @@ export interface Trip {
   notes?: string;
   /** Diary entries added over time, during or after the trip. */
   journal?: JournalEntry[];
+  /** 1 (worst) to 5 (best), settable once the felt effects have worn off. */
+  rating?: number;
   source: 'manual' | 'import';
   createdAt: string; // ISO string
 }

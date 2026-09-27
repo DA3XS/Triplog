@@ -2,16 +2,13 @@ import { useMemo, useState } from 'react';
 import { useSortedSubstances, useSubstancesById, useTrips } from '../hooks/useData';
 import { db } from '../db';
 import { formatAmount, formatDateTime } from '../lib/format';
-import { convertAmount, getDoseLevel } from '../lib/timeline';
+import { convertAmount, DOSE_LEVEL_LABEL, getDoseLevel } from '../lib/timeline';
 import { TripJournal } from './TripJournal';
+import { TripRating } from './TripRating';
+import { DoseScaleBar } from './DoseScaleBar';
+import { Smiley } from './Smiley';
+import { RATING_COLORS, RATING_MOODS, RATING_LABELS } from '../lib/rating';
 import type { Substance, Trip } from '../types';
-
-const DOSE_LABEL: Record<string, string> = {
-  light: 'leicht',
-  common: 'üblich',
-  strong: 'stark',
-  heavy: 'sehr stark',
-};
 
 export function HistoryList() {
   const trips = useTrips();
@@ -50,16 +47,24 @@ export function HistoryList() {
                       {formatAmount(trip.amountValue, trip.amountUnit)}
                     </span>
                     <span className="text-xs rounded-full px-2 py-0.5 bg-black/5 dark:bg-white/10 text-black/60 dark:text-white/60">
-                      {DOSE_LABEL[doseLevel]}
+                      {DOSE_LEVEL_LABEL[doseLevel]}
                     </span>
                     {trip.source === 'import' && (
                       <span className="text-xs rounded-full px-2 py-0.5 bg-black/5 dark:bg-white/10 text-black/40 dark:text-white/40">
                         importiert
                       </span>
                     )}
+                    {trip.rating && (
+                      <span title={RATING_LABELS[trip.rating - 1]}>
+                        <Smiley color={RATING_COLORS[trip.rating - 1]} mood={RATING_MOODS[trip.rating - 1]} size={20} />
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-black/50 dark:text-white/50 mt-1">
                     {formatDateTime(new Date(trip.startTime))}
+                  </div>
+                  <div className="mt-2 max-w-40">
+                    <DoseScaleBar level={doseLevel} size="compact" />
                   </div>
                   {trip.notes && <div className="text-sm mt-2 whitespace-pre-wrap">{trip.notes}</div>}
                 </div>
@@ -72,6 +77,8 @@ export function HistoryList() {
                   🗑
                 </button>
               </div>
+
+              <TripRating trip={trip} substance={substance} />
 
               <button
                 onClick={() => setExpandedId(expanded ? null : trip.id)}

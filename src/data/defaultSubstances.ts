@@ -39,7 +39,8 @@ export const defaultSubstances: Substance[] = [
     order: 0,
     defaultUnit: 'g',
     ...psilocybinPhases,
-    doseThresholds: { light: 0.5, common: 1, strong: 2.5, heavy: 4 },
+    // Low 0.5-1.5g, Medium 1.5-2.5g, High 2.5-3.5g, Ultra High 3.5-5g, Heroic 5g+.
+    doseThresholds: { low: 0.5, medium: 1.5, high: 2.5, ultraHigh: 3.5, heroic: 5 },
     mentalAfterglowDays: 1,
     toleranceResetDays: 14,
     builtin: true,
@@ -52,7 +53,9 @@ export const defaultSubstances: Substance[] = [
     order: 1,
     defaultUnit: 'g',
     ...psilocybinPhases,
-    doseThresholds: { light: 5, common: 10, strong: 15, heavy: 25 },
+    // Truffles are roughly ~10x weaker by weight than dried mushrooms;
+    // scaled proportionally from the Mushrooms thresholds above (estimate).
+    doseThresholds: { low: 5, medium: 15, high: 25, ultraHigh: 35, heroic: 50 },
     mentalAfterglowDays: 1,
     toleranceResetDays: 14,
     builtin: true,
@@ -65,7 +68,9 @@ export const defaultSubstances: Substance[] = [
     order: 2,
     defaultUnit: 'ug',
     ...lsdPhases,
-    doseThresholds: { light: 25, common: 50, strong: 125, heavy: 250 },
+    // Not specified by the user - estimated from common harm-reduction
+    // dosage charts.
+    doseThresholds: { low: 25, medium: 75, high: 150, ultraHigh: 250, heroic: 400 },
     mentalAfterglowDays: 1,
     toleranceResetDays: 14,
     builtin: true,

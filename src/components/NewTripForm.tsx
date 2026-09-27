@@ -4,6 +4,7 @@ import { db } from '../db';
 import type { Trip, Unit } from '../types';
 import { getDoseLevel } from '../lib/timeline';
 import { toLocalInputValue, fromLocalInputValue } from '../lib/localDate';
+import { DoseScaleBar } from './DoseScaleBar';
 
 export type TripFormMode = 'new' | 'past';
 
@@ -11,13 +12,6 @@ interface Props {
   mode: TripFormMode | null;
   onClose: () => void;
 }
-
-const DOSE_LABEL: Record<string, string> = {
-  light: 'leicht',
-  common: 'üblich',
-  strong: 'stark',
-  heavy: 'sehr stark',
-};
 
 export function NewTripForm({ mode, onClose }: Props) {
   const substances = useSortedSubstances();
@@ -145,8 +139,8 @@ export function NewTripForm({ mode, onClose }: Props) {
         </div>
 
         {doseLevel && (
-          <div className="text-xs text-black/50 dark:text-white/50 -mt-2">
-            Einstufung: <span className="font-medium">{DOSE_LABEL[doseLevel]}</span>
+          <div className="-mt-2">
+            <DoseScaleBar level={doseLevel} />
           </div>
         )}
 

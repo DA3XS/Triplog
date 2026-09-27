@@ -45,8 +45,8 @@ function App() {
   const showWelcome = !welcomeDismissed && trips.length === 0;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b border-black/10 dark:border-white/10">
+    <div className="min-h-dvh flex flex-col">
+      <header className="border-b border-black/10 dark:border-white/10 pt-[env(safe-area-inset-top)]">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-2">
           <span className="text-2xl">🍄</span>
           <span className="text-lg font-semibold">Triplog</span>
@@ -56,7 +56,7 @@ function App() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 pt-6 pb-24 flex flex-col gap-5">
+      <main className="flex-1 max-w-3xl w-full mx-auto px-4 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom))] flex flex-col gap-5">
         {showWelcome && (
           <div className="rounded-2xl border border-violet-300/50 dark:border-violet-500/30 bg-violet-50 dark:bg-violet-500/10 p-4 flex flex-col gap-2">
             <div className="font-medium">Willkommen bei Triplog 👋</div>
@@ -90,7 +90,7 @@ function App() {
         {tab === 'settings' && <SettingsView />}
       </main>
 
-      <nav className="sticky bottom-0 border-t border-black/10 dark:border-white/10 bg-white/90 dark:bg-neutral-950/90 backdrop-blur">
+      <nav className="sticky bottom-0 border-t border-black/10 dark:border-white/10 bg-white/90 dark:bg-neutral-950/90 backdrop-blur pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-3xl mx-auto grid grid-cols-4">
           {TABS.map((t) => (
             <button

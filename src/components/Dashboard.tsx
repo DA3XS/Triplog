@@ -7,6 +7,7 @@ import { TripCurve } from './TripCurve';
 import { EffectTimer } from './EffectTimer';
 import { AfterglowBar } from './AfterglowBar';
 import { TripJournal } from './TripJournal';
+import { TripRating } from './TripRating';
 import type { TripFormMode } from './NewTripForm';
 import type { TripPhase } from '../types';
 
@@ -114,6 +115,10 @@ export function Dashboard({ onOpenTripForm }: Props) {
           <div className="mt-5">
             <AfterglowBar trip={status.activeTrip} substance={activeSubstance} now={now} />
           </div>
+        )}
+
+        {status.activeTrip && activeSubstance && (
+          <TripRating trip={status.activeTrip} substance={activeSubstance} />
         )}
 
         {status.activeTrip && (
