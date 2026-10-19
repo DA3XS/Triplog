@@ -122,7 +122,7 @@ export function HistoryList() {
                 </button>
               </div>
 
-              <TripRating trip={trip} substance={substance} />
+              <TripRating trip={trip} substance={substance} showSmileyWhenRated={false} />
 
               <button
                 onClick={() => setExpandedId(expanded ? null : trip.id)}

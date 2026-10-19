@@ -8,10 +8,12 @@ import type { Substance, Trip } from '../types';
 interface Props {
   trip: Trip;
   substance: Substance;
+  /** Set to false when a rating smiley is already shown elsewhere right above this (e.g. the history row's badge strip), to avoid repeating it. */
+  showSmileyWhenRated?: boolean;
 }
 
 /** Rating picker for a trip, only shown once its felt effects (onset..Come-down) have worn off. */
-export function TripRating({ trip, substance }: Props) {
+export function TripRating({ trip, substance, showSmileyWhenRated = true }: Props) {
   const now = useNow(60_000);
   const [editing, setEditing] = useState(false);
   const b = computeTripBoundaries(trip, substance);
@@ -27,7 +29,10 @@ export function TripRating({ trip, substance }: Props) {
     const i = trip.rating - 1;
     return (
       <div className="mt-5 pt-5 border-t border-black/10 dark:border-white/10 flex items-center justify-between gap-2">
-        <div className="text-sm text-black/70 dark:text-white/70">Bewertung: {RATING_LABELS[i]}</div>
+        <div className="flex items-center gap-2 text-sm text-black/70 dark:text-white/70">
+          {showSmileyWhenRated && <Smiley color={RATING_COLORS[i]} mood={RATING_MOODS[i]} size={28} />}
+          <span>Bewertung: {RATING_LABELS[i]}</span>
+        </div>
         <button
           onClick={() => setEditing(true)}
           className="text-xs text-violet-600 dark:text-violet-400 font-medium shrink-0"
