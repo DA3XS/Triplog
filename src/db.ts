@@ -53,25 +53,15 @@ function splitLegacyPhases(legacy: {
 /**
  * Upgrades substances already stored in the user's browser to the current
  * app schema. Runs on every start so shipping a code update (new phase
- * model, renamed substance, adjusted dose thresholds, ...) never leaves
- * stale IndexedDB data that crashes the UI. Built-in substances are
- * re-synced from the shipped defaults on every load (their afterglow/
- * tolerance day settings are preserved if the user customized them); any
- * other substance still stuck on an older shape gets a best-effort repair.
+ * model, renamed substance, adjusted dose thresholds, afterglow/tolerance
+ * heuristics, ...) never leaves stale IndexedDB data that crashes the UI.
+ * Built-in substances are always fully re-synced from the shipped defaults
+ * — their harm-reduction values are fixed, not user-editable; any other
+ * substance still stuck on an older shape gets a best-effort repair.
  */
 export async function migrateSubstances() {
   const stored = await db.substances.toArray();
-  const storedById = new Map(stored.map((s) => [s.id, s]));
-  const updates: Substance[] = [];
-
-  for (const builtinDefault of defaultSubstances) {
-    const existing = storedById.get(builtinDefault.id);
-    updates.push({
-      ...builtinDefault,
-      mentalAfterglowDays: existing?.mentalAfterglowDays ?? builtinDefault.mentalAfterglowDays,
-      toleranceResetDays: existing?.toleranceResetDays ?? builtinDefault.toleranceResetDays,
-    });
-  }
+  const updates: Substance[] = [...defaultSubstances];
 
   for (const record of stored) {
     if (defaultSubstances.some((d) => d.id === record.id)) continue; // already handled above

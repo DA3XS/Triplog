@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ensureSeedData, getMeta, migrateSubstances, setMeta } from './db';
-import { useTrips } from './hooks/useData';
+import { useSubstancesById, useTrips } from './hooks/useData';
+import { useNow } from './hooks/useNow';
+import { watchSystemTheme } from './lib/theme';
+import { checkTripEndReminders } from './lib/notifications';
 import { Dashboard } from './components/Dashboard';
 import { CalendarView } from './components/CalendarView';
 import { HistoryList } from './components/HistoryList';
@@ -24,6 +27,8 @@ function App() {
   const [tripFormMode, setTripFormMode] = useState<TripFormMode | null>(null);
   const [welcomeDismissed, setWelcomeDismissed] = useState(true);
   const trips = useTrips();
+  const substancesById = useSubstancesById();
+  const reminderCheckNow = useNow(60_000);
 
   useEffect(() => {
     (async () => {
@@ -34,6 +39,12 @@ function App() {
       setReady(true);
     })();
   }, []);
+
+  useEffect(() => watchSystemTheme(), []);
+
+  useEffect(() => {
+    checkTripEndReminders(trips, substancesById, reminderCheckNow);
+  }, [trips, substancesById, reminderCheckNow]);
 
   async function dismissWelcome() {
     await setMeta(WELCOME_DISMISSED_KEY, '1');

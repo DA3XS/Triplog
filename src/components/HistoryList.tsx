@@ -2,18 +2,38 @@ import { useMemo, useState } from 'react';
 import { useSortedSubstances, useSubstancesById, useTrips } from '../hooks/useData';
 import { db } from '../db';
 import { formatAmount, formatDateTime } from '../lib/format';
-import { convertAmount, DOSE_LEVEL_COLOR, DOSE_LEVEL_LABEL, DOSE_LEVEL_TEXT_COLOR, getDoseLevel } from '../lib/timeline';
+import {
+  convertAmount,
+  DOSE_LEVEL_COLOR,
+  DOSE_LEVEL_LABEL,
+  DOSE_LEVEL_TEXT_COLOR,
+  getDoseLevel,
+  tripTotalAmount,
+} from '../lib/timeline';
 import { TripJournal } from './TripJournal';
 import { TripRating } from './TripRating';
+import { TripContext } from './TripContext';
+import { RedoseList } from './RedoseList';
+import { StatsView } from './StatsView';
 import { Smiley } from './Smiley';
 import { RATING_COLORS, RATING_MOODS, RATING_LABELS } from '../lib/rating';
 import type { Substance, Trip } from '../types';
+
+function matchesSearch(trip: Trip, substance: Substance, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  if (substance.name.toLowerCase().includes(q)) return true;
+  if (trip.notes?.toLowerCase().includes(q)) return true;
+  if (trip.journal?.some((entry) => entry.text.toLowerCase().includes(q))) return true;
+  return false;
+}
 
 export function HistoryList() {
   const trips = useTrips();
   const substances = useSortedSubstances();
   const substancesById = useSubstancesById();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   async function handleDelete(id: string) {
     if (!confirm('Diesen Trip-Eintrag wirklich löschen?')) return;
@@ -24,15 +44,35 @@ export function HistoryList() {
     return <div className="text-sm text-black/50 dark:text-white/50">Noch keine Trips erfasst.</div>;
   }
 
+  const filteredTrips = trips.filter((trip) => {
+    const substance = substancesById.get(trip.substanceId);
+    return substance ? matchesSearch(trip, substance, search) : false;
+  });
+
   return (
     <div className="flex flex-col gap-5">
       <StatsSummary trips={trips} substances={substances} />
 
+      <StatsView trips={trips} substances={substances} substancesById={substancesById} />
+
+      <input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Suche in Substanz, Notizen, Tagebuch…"
+        className="rounded-lg border border-black/15 dark:border-white/15 bg-white dark:bg-neutral-900 px-3 py-2 text-sm"
+      />
+
+      {filteredTrips.length === 0 && (
+        <div className="text-sm text-black/50 dark:text-white/50">Keine Treffer für "{search}".</div>
+      )}
+
       <div className="flex flex-col gap-2">
-        {trips.map((trip) => {
+        {filteredTrips.map((trip) => {
           const substance = substancesById.get(trip.substanceId);
           if (!substance) return null;
-          const doseLevel = getDoseLevel(substance, trip.amountValue, trip.amountUnit);
+          const totalAmount = tripTotalAmount(trip);
+          const doseLevel = getDoseLevel(substance, totalAmount, trip.amountUnit);
           const journalCount = trip.journal?.length ?? 0;
           const expanded = expandedId === trip.id;
           return (
@@ -43,7 +83,10 @@ export function HistoryList() {
                     <span>{substance.emoji}</span>
                     <span>{substance.name}</span>
                     <span className="text-black/50 dark:text-white/50 font-normal">
-                      {formatAmount(trip.amountValue, trip.amountUnit)}
+                      {formatAmount(totalAmount, trip.amountUnit)}
+                      {trip.redoses && trip.redoses.length > 0 && (
+                        <span className="text-black/35 dark:text-white/35"> (inkl. Nachlegen)</span>
+                      )}
                     </span>
                     <span
                       className="text-xs rounded-full px-2 py-0.5 font-medium"
@@ -65,6 +108,8 @@ export function HistoryList() {
                   <div className="text-xs text-black/50 dark:text-white/50 mt-1">
                     {formatDateTime(new Date(trip.startTime))}
                   </div>
+                  <TripContext trip={trip} />
+                  <RedoseList trip={trip} />
                   {trip.notes && <div className="text-sm mt-2 whitespace-pre-wrap">{trip.notes}</div>}
                 </div>
                 <button
@@ -107,7 +152,7 @@ function StatsSummary({ trips, substances }: { trips: Trip[]; substances: Substa
       if (!substance) continue;
       const entry = bySubstance.get(substance.id) ?? { count: 0, total: 0 };
       entry.count += 1;
-      entry.total += convertAmount(trip.amountValue, trip.amountUnit, substance.defaultUnit);
+      entry.total += convertAmount(tripTotalAmount(trip), trip.amountUnit, substance.defaultUnit);
       bySubstance.set(substance.id, entry);
     }
     return substances

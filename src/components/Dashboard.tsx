@@ -1,13 +1,14 @@
 import { useMemo } from 'react';
 import { useSubstancesById, useTrips } from '../hooks/useData';
 import { useNow } from '../hooks/useNow';
-import { getOverallStatus, getTripPhaseAt } from '../lib/timeline';
+import { getOverallStatus, getTripPhaseAt, tripTotalAmount } from '../lib/timeline';
 import { formatAmount, formatDate, formatDaysCount, formatRelativeDays } from '../lib/format';
 import { TripCurve } from './TripCurve';
 import { EffectTimer } from './EffectTimer';
 import { AfterglowBar } from './AfterglowBar';
 import { TripJournal } from './TripJournal';
 import { TripRating } from './TripRating';
+import { RedoseControl } from './RedoseControl';
 import type { TripFormMode } from './NewTripForm';
 import type { TripPhase } from '../types';
 
@@ -88,7 +89,7 @@ export function Dashboard({ onOpenTripForm }: Props) {
               phase={status.phase}
               substanceName={activeSubstance.name}
               substanceEmoji={activeSubstance.emoji}
-              amountValue={status.activeTrip.amountValue}
+              amountValue={tripTotalAmount(status.activeTrip)}
               amountUnit={status.activeTrip.amountUnit}
               now={now}
               nextPossibleTripDate={status.nextPossibleTripDate}
@@ -96,7 +97,7 @@ export function Dashboard({ onOpenTripForm }: Props) {
           ) : status.lastTrip && lastSubstance ? (
             <div>
               Letzter Trip: {formatDate(new Date(status.lastTrip.startTime))} · {lastSubstance.emoji}{' '}
-              {lastSubstance.name} ({formatAmount(status.lastTrip.amountValue, status.lastTrip.amountUnit)}) –{' '}
+              {lastSubstance.name} ({formatAmount(tripTotalAmount(status.lastTrip), status.lastTrip.amountUnit)}) –{' '}
               {status.daysSinceLastTrip !== null ? formatDaysCount(status.daysSinceLastTrip) + ' her' : ''}
             </div>
           ) : (
@@ -108,6 +109,7 @@ export function Dashboard({ onOpenTripForm }: Props) {
           <div className="mt-5 flex flex-col gap-4">
             <EffectTimer trip={status.activeTrip} substance={activeSubstance} />
             <TripCurve trip={status.activeTrip} substance={activeSubstance} now={now} />
+            <RedoseControl trip={status.activeTrip} substance={activeSubstance} />
           </div>
         )}
 

@@ -11,6 +11,12 @@ export function normalizedAmount(substance: Substance, value: number, unit: Unit
   return convertAmount(value, unit, substance.defaultUnit);
 }
 
+/** The trip's initial amount plus any later redoses ("Nachlegen"), in the trip's own amountUnit. */
+export function tripTotalAmount(trip: Trip): number {
+  const redosed = trip.redoses?.reduce((sum, r) => sum + r.value, 0) ?? 0;
+  return trip.amountValue + redosed;
+}
+
 /** Dose levels in ascending order — index (0-4) doubles as the "1-5" scale shown in the UI. */
 export const DOSE_LEVEL_ORDER: DoseLevel[] = ['low', 'medium', 'high', 'ultraHigh', 'heroic'];
 
@@ -97,7 +103,7 @@ export interface TripBoundaries {
 
 /** Computes every phase boundary for a trip, scaled by its dose intensity. */
 export function computeTripBoundaries(trip: Trip, substance: Substance): TripBoundaries {
-  const factor = doseScaleFactor(substance, trip.amountValue, trip.amountUnit);
+  const factor = doseScaleFactor(substance, tripTotalAmount(trip), trip.amountUnit);
   const start = new Date(trip.startTime);
 
   const onsetMin = interpolatePhase(substance.onset, factor);

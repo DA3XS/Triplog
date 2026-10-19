@@ -31,13 +31,14 @@ export interface Substance {
   doseThresholds: Record<DoseLevel, number>;
   /**
    * Days after the trip during which mental/emotional afterglow is expected
-   * (integration period, mood after-effects). This is a personal heuristic,
-   * not medical advice, and can be tuned per substance in settings.
+   * (integration period, mood after-effects). A fixed harm-reduction
+   * heuristic, not medical advice — not user-editable.
    */
   mentalAfterglowDays: number;
   /**
    * Days after the trip start recommended before tripping again, to allow
-   * receptor tolerance to reset. Personal/harm-reduction heuristic, editable.
+   * receptor tolerance to reset. A fixed harm-reduction heuristic, not
+   * user-editable.
    */
   toleranceResetDays: number;
   /** True for substances seeded by the app; false for user-created ones. */
@@ -51,6 +52,13 @@ export interface JournalEntry {
   text: string;
 }
 
+/** An additional dose taken during an already-running trip ("Nachlegen"), in the trip's own amountUnit. */
+export interface Redose {
+  id: string;
+  time: string; // ISO string
+  value: number;
+}
+
 export interface Trip {
   id: string;
   substanceId: string;
@@ -62,7 +70,15 @@ export interface Trip {
   endTime?: string;
   amountValue: number;
   amountUnit: Unit;
+  /** Additional doses taken during this same trip ("Nachlegen"), in amountUnit. */
+  redoses?: Redose[];
   notes?: string;
+  /** Where the trip took place — optional "Set & Setting" context. */
+  location?: string;
+  /** Alone or with other people — optional "Set & Setting" context. */
+  setting?: 'alone' | 'accompanied';
+  /** Mood right before taking the substance, 1 (schlecht) to 5 (gut) — optional "Set & Setting" context. */
+  moodBefore?: number;
   /** Diary entries added over time, during or after the trip. */
   journal?: JournalEntry[];
   /** 1 (worst) to 5 (best), settable once the felt effects have worn off. */

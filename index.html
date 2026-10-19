@@ -17,6 +17,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Triplog" />
     <title>Triplog</title>
+    <script>
+      // Applies the stored Hell/Dunkel/System preference before first paint to avoid a flash.
+      (function () {
+        try {
+          var stored = localStorage.getItem('triplog-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = stored === 'dark' || (stored !== 'light' && prefersDark);
+          var root = document.documentElement;
+          root.classList.toggle('dark', dark);
+          root.style.colorScheme = stored === 'light' || stored === 'dark' ? stored : 'light dark';
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

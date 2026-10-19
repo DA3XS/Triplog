@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSortedSubstances } from '../hooks/useData';
+import { useSortedSubstances, useTrips } from '../hooks/useData';
 import { db } from '../db';
 import type { Trip, Unit } from '../types';
-import { getDoseLevel } from '../lib/timeline';
+import { computeTripBoundaries, getDoseLevel } from '../lib/timeline';
+import { formatAmount, formatDate } from '../lib/format';
 import { toLocalInputValue, fromLocalInputValue } from '../lib/localDate';
 import { DoseScaleBar } from './DoseScaleBar';
 
@@ -15,11 +16,16 @@ interface Props {
 
 export function NewTripForm({ mode, onClose }: Props) {
   const substances = useSortedSubstances();
+  const trips = useTrips();
   const [substanceId, setSubstanceId] = useState<string>('');
   const [amount, setAmount] = useState('');
   const [unit, setUnit] = useState<Unit>('g');
   const [startTime, setStartTime] = useState('');
   const [notes, setNotes] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [location, setLocation] = useState('');
+  const [setting, setSetting] = useState<'' | 'alone' | 'accompanied'>('');
+  const [moodBefore, setMoodBefore] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -41,6 +47,10 @@ export function NewTripForm({ mode, onClose }: Props) {
     setSubstanceId('');
     setAmount('');
     setNotes('');
+    setShowAdvanced(false);
+    setLocation('');
+    setSetting('');
+    setMoodBefore(null);
     setError(null);
     setStartTime(mode === 'new' ? toLocalInputValue(new Date()) : '');
   }, [mode]);
@@ -49,6 +59,31 @@ export function NewTripForm({ mode, onClose }: Props) {
 
   const amountNum = parseFloat(amount.replace(',', '.'));
   const doseLevel = substance && !Number.isNaN(amountNum) && amountNum > 0 ? getDoseLevel(substance, amountNum, unit) : null;
+
+  // Most recent previous trip of the same substance, for prefill and the tolerance check below.
+  const lastTripForSubstance = substance ? trips.find((t) => t.substanceId === substance.id) ?? null : null;
+
+  function applyLastTrip() {
+    if (!lastTripForSubstance) return;
+    setAmount(String(lastTripForSubstance.amountValue));
+    setUnit(lastTripForSubstance.amountUnit);
+  }
+
+  let toleranceWarning: string | null = null;
+  if (substance && startTime) {
+    const startDate = fromLocalInputValue(startTime);
+    const prior = trips
+      .filter((t) => t.substanceId === substance.id && new Date(t.startTime).getTime() < startDate.getTime())
+      .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
+    if (prior) {
+      const b = computeTripBoundaries(prior, substance);
+      if (b.toleranceResetEnd.getTime() > startDate.getTime()) {
+        toleranceWarning = `Die Toleranz-Erholung von deiner letzten ${substance.name}-Einnahme (${formatDate(
+          new Date(prior.startTime),
+        )}) ist erst am ${formatDate(b.toleranceResetEnd)} abgeschlossen.`;
+      }
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +109,9 @@ export function NewTripForm({ mode, onClose }: Props) {
         amountValue: amountNum,
         amountUnit: unit,
         notes: notes.trim() || undefined,
+        location: location.trim() || undefined,
+        setting: setting || undefined,
+        moodBefore: moodBefore ?? undefined,
         source: 'manual',
         createdAt: new Date().toISOString(),
       };
@@ -112,6 +150,16 @@ export function NewTripForm({ mode, onClose }: Props) {
           </select>
         </label>
 
+        {lastTripForSubstance && (
+          <button
+            type="button"
+            onClick={applyLastTrip}
+            className="self-start text-xs text-violet-600 dark:text-violet-400 font-medium -mt-2"
+          >
+            Wie letztes Mal ({formatAmount(lastTripForSubstance.amountValue, lastTripForSubstance.amountUnit)})
+          </button>
+        )}
+
         <div className="flex gap-3">
           <label className="flex flex-col gap-1 text-sm flex-1">
             <span className="text-black/60 dark:text-white/60">Menge</span>
@@ -144,6 +192,12 @@ export function NewTripForm({ mode, onClose }: Props) {
           </div>
         )}
 
+        {doseLevel === 'heroic' && (
+          <div className="text-xs rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-300/50 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 px-3 py-2">
+            ⚠️ Heroic Dose – sehr hohe Menge. Sicheres Setting und ein nüchterner Trip-Sitter werden dringend empfohlen.
+          </div>
+        )}
+
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-black/60 dark:text-white/60">
             {mode === 'past' ? 'Zeitpunkt (wann hat der Trip begonnen?)' : 'Zeitpunkt'}
@@ -156,6 +210,12 @@ export function NewTripForm({ mode, onClose }: Props) {
           />
         </label>
 
+        {toleranceWarning && (
+          <div className="text-xs rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-300/50 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 px-3 py-2">
+            ⚠️ {toleranceWarning}
+          </div>
+        )}
+
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-black/60 dark:text-white/60">Notizen (optional)</span>
           <textarea
@@ -165,6 +225,69 @@ export function NewTripForm({ mode, onClose }: Props) {
             className="rounded-lg border border-black/15 dark:border-white/15 bg-transparent px-3 py-2 resize-none"
           />
         </label>
+
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          className="self-start text-xs text-violet-600 dark:text-violet-400 font-medium -mt-1"
+        >
+          {showAdvanced ? 'Set & Setting ausblenden' : 'Set & Setting hinzufügen (Ort, Begleitung, Stimmung)'}
+        </button>
+
+        {showAdvanced && (
+          <div className="flex flex-col gap-3 rounded-lg border border-black/10 dark:border-white/10 p-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-black/60 dark:text-white/60">Ort (optional)</span>
+              <input
+                type="text"
+                placeholder="z.B. Zuhause, Natur, Festival"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="rounded-lg border border-black/15 dark:border-white/15 bg-transparent px-3 py-2"
+              />
+            </label>
+
+            <div className="flex flex-col gap-1 text-sm">
+              <span className="text-black/60 dark:text-white/60">Begleitung</span>
+              <div className="flex gap-2">
+                {(['alone', 'accompanied'] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setSetting(setting === opt ? '' : opt)}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium border ${
+                      setting === opt
+                        ? 'bg-violet-600 border-violet-600 text-white'
+                        : 'border-black/15 dark:border-white/15 text-black/70 dark:text-white/70'
+                    }`}
+                  >
+                    {opt === 'alone' ? 'Allein' : 'Begleitet'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1 text-sm">
+              <span className="text-black/60 dark:text-white/60">Stimmung vorher</span>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setMoodBefore(moodBefore === v ? null : v)}
+                    className={`w-9 h-9 rounded-full text-sm font-medium border ${
+                      moodBefore === v
+                        ? 'bg-violet-600 border-violet-600 text-white'
+                        : 'border-black/15 dark:border-white/15 text-black/70 dark:text-white/70'
+                    }`}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && <div className="text-sm text-red-600">{error}</div>}
 

@@ -7,10 +7,13 @@ import {
   DOSE_LEVEL_LABEL,
   DOSE_LEVEL_TEXT_COLOR,
   getDoseLevel,
+  tripTotalAmount,
 } from '../lib/timeline';
 import { formatAmount, formatDate, formatDateTime } from '../lib/format';
 import { TripRating } from './TripRating';
 import { TripJournal } from './TripJournal';
+import { TripContext } from './TripContext';
+import { RedoseList } from './RedoseList';
 
 interface Props {
   day: Date;
@@ -54,7 +57,8 @@ export function DayDetailSheet({ day, info, substancesById, onClose }: Props) {
               const substance = substancesById.get(trip.substanceId);
               if (!substance) return null;
               const b = computeTripBoundaries(trip, substance);
-              const doseLevel = getDoseLevel(substance, trip.amountValue, trip.amountUnit);
+              const totalAmount = tripTotalAmount(trip);
+              const doseLevel = getDoseLevel(substance, totalAmount, trip.amountUnit);
               const journalCount = trip.journal?.length ?? 0;
               const expanded = expandedId === trip.id;
               return (
@@ -63,7 +67,10 @@ export function DayDetailSheet({ day, info, substancesById, onClose }: Props) {
                     <span>{substance.emoji}</span>
                     <span>{substance.name}</span>
                     <span className="text-black/50 dark:text-white/50 font-normal">
-                      {formatAmount(trip.amountValue, trip.amountUnit)}
+                      {formatAmount(totalAmount, trip.amountUnit)}
+                      {trip.redoses && trip.redoses.length > 0 && (
+                        <span className="text-black/35 dark:text-white/35"> (inkl. Nachlegen)</span>
+                      )}
                     </span>
                     <span
                       className="text-xs rounded-full px-2 py-0.5 font-medium"
@@ -83,6 +90,8 @@ export function DayDetailSheet({ day, info, substancesById, onClose }: Props) {
                     <span>Afterglow bis: {formatDate(b.afterglowEnd)}</span>
                     <span>Toleranz-Reset: {formatDate(b.toleranceResetEnd)}</span>
                   </div>
+                  <TripContext trip={trip} />
+                  <RedoseList trip={trip} />
                   {trip.notes && <div className="text-sm mt-2 whitespace-pre-wrap">{trip.notes}</div>}
 
                   <TripRating trip={trip} substance={substance} />

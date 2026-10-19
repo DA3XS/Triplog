@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* Class-based dark mode so the in-app Hell/Dunkel/System toggle can override
+   the OS preference, instead of dark: always following prefers-color-scheme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   color-scheme: light dark;
 }
