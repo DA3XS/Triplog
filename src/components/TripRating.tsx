@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNow } from '../hooks/useNow';
 import { computeTripBoundaries } from '../lib/timeline';
 import { setTripRating, RATING_COLORS, RATING_MOODS, RATING_LABELS } from '../lib/rating';
@@ -12,9 +13,33 @@ interface Props {
 /** Rating picker for a trip, only shown once its felt effects (onset..Come-down) have worn off. */
 export function TripRating({ trip, substance }: Props) {
   const now = useNow(60_000);
+  const [editing, setEditing] = useState(false);
   const b = computeTripBoundaries(trip, substance);
 
   if (now.getTime() < b.comedownEnd.getTime()) return null;
+
+  async function handleSelect(value: number) {
+    await setTripRating(trip.id, value);
+    setEditing(false);
+  }
+
+  if (trip.rating && !editing) {
+    const i = trip.rating - 1;
+    return (
+      <div className="mt-5 pt-5 border-t border-black/10 dark:border-white/10 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm text-black/70 dark:text-white/70">
+          <Smiley color={RATING_COLORS[i]} mood={RATING_MOODS[i]} size={28} />
+          <span>{RATING_LABELS[i]}</span>
+        </div>
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-violet-600 dark:text-violet-400 font-medium shrink-0"
+        >
+          Bewertung anpassen
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-5 pt-5 border-t border-black/10 dark:border-white/10 flex flex-col gap-2">
@@ -26,7 +51,7 @@ export function TripRating({ trip, substance }: Props) {
           return (
             <button
               key={value}
-              onClick={() => setTripRating(trip.id, value)}
+              onClick={() => handleSelect(value)}
               title={RATING_LABELS[i]}
               aria-label={RATING_LABELS[i]}
               className={`rounded-full transition-transform ${
@@ -38,6 +63,14 @@ export function TripRating({ trip, substance }: Props) {
           );
         })}
       </div>
+      {trip.rating && (
+        <button
+          onClick={() => setEditing(false)}
+          className="self-start text-xs text-black/50 dark:text-white/50"
+        >
+          Abbrechen
+        </button>
+      )}
     </div>
   );
 }
