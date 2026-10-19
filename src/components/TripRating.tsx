@@ -27,10 +27,7 @@ export function TripRating({ trip, substance }: Props) {
     const i = trip.rating - 1;
     return (
       <div className="mt-5 pt-5 border-t border-black/10 dark:border-white/10 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm text-black/70 dark:text-white/70">
-          <Smiley color={RATING_COLORS[i]} mood={RATING_MOODS[i]} size={28} />
-          <span>{RATING_LABELS[i]}</span>
-        </div>
+        <div className="text-sm text-black/70 dark:text-white/70">Bewertung: {RATING_LABELS[i]}</div>
         <button
           onClick={() => setEditing(true)}
           className="text-xs text-violet-600 dark:text-violet-400 font-medium shrink-0"
