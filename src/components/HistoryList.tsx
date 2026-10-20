@@ -28,7 +28,11 @@ function matchesSearch(trip: Trip, substance: Substance, query: string): boolean
   return false;
 }
 
-export function HistoryList() {
+interface Props {
+  onEditTrip: (trip: Trip) => void;
+}
+
+export function HistoryList({ onEditTrip }: Props) {
   const trips = useTrips();
   const substances = useSortedSubstances();
   const substancesById = useSubstancesById();
@@ -112,14 +116,24 @@ export function HistoryList() {
                   <RedoseList trip={trip} />
                   {trip.notes && <div className="text-sm mt-2 whitespace-pre-wrap">{trip.notes}</div>}
                 </div>
-                <button
-                  onClick={() => handleDelete(trip.id)}
-                  className="text-black/30 dark:text-white/30 hover:text-red-600 shrink-0"
-                  aria-label="Löschen"
-                  title="Löschen"
-                >
-                  🗑
-                </button>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => onEditTrip(trip)}
+                    className="text-black/30 dark:text-white/30 hover:text-violet-600"
+                    aria-label="Bearbeiten"
+                    title="Bearbeiten"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => handleDelete(trip.id)}
+                    className="text-black/30 dark:text-white/30 hover:text-red-600"
+                    aria-label="Löschen"
+                    title="Löschen"
+                  >
+                    🗑
+                  </button>
+                </div>
               </div>
 
               <TripRating trip={trip} substance={substance} showSmileyWhenRated={false} />

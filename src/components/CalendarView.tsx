@@ -3,6 +3,11 @@ import { useSubstancesById, useTrips } from '../hooks/useData';
 import { getDayInfo, getMonthGrid, isSameDay, type DayInfo } from '../lib/calendar';
 import { formatMonthYear, formatWeekday } from '../lib/format';
 import { DayDetailSheet } from './DayDetailSheet';
+import type { Trip } from '../types';
+
+interface Props {
+  onEditTrip: (trip: Trip) => void;
+}
 
 const WEEKDAY_SAMPLE = [
   new Date(2024, 0, 1), // Monday
@@ -14,7 +19,7 @@ const WEEKDAY_SAMPLE = [
   new Date(2024, 0, 7),
 ];
 
-export function CalendarView() {
+export function CalendarView({ onEditTrip }: Props) {
   const trips = useTrips();
   const substancesById = useSubstancesById();
   const [cursor, setCursor] = useState(() => {
@@ -107,7 +112,13 @@ export function CalendarView() {
       </div>
 
       {selectedDay && selectedInfo && (
-        <DayDetailSheet day={selectedDay} info={selectedInfo} substancesById={substancesById} onClose={() => setSelectedDay(null)} />
+        <DayDetailSheet
+          day={selectedDay}
+          info={selectedInfo}
+          substancesById={substancesById}
+          onClose={() => setSelectedDay(null)}
+          onEditTrip={onEditTrip}
+        />
       )}
     </div>
   );

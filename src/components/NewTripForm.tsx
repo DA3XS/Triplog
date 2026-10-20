@@ -8,13 +8,14 @@ import { toLocalInputValue, fromLocalInputValue } from '../lib/localDate';
 import { DoseScaleBar } from './DoseScaleBar';
 
 export type TripFormMode = 'new' | 'past';
+export type TripFormTarget = { mode: 'new' } | { mode: 'past' } | { mode: 'edit'; trip: Trip };
 
 interface Props {
-  mode: TripFormMode | null;
+  target: TripFormTarget | null;
   onClose: () => void;
 }
 
-export function NewTripForm({ mode, onClose }: Props) {
+export function NewTripForm({ target, onClose }: Props) {
   const substances = useSortedSubstances();
   const trips = useTrips();
   const [substanceId, setSubstanceId] = useState<string>('');
@@ -29,6 +30,8 @@ export function NewTripForm({ mode, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const editingTrip = target?.mode === 'edit' ? target.trip : null;
+
   const effectiveSubstanceId = substanceId || substances[0]?.id || '';
   const substance = useMemo(
     () => substances.find((s) => s.id === effectiveSubstanceId),
@@ -36,32 +39,46 @@ export function NewTripForm({ mode, onClose }: Props) {
   );
 
   useEffect(() => {
-    if (substance) setUnit(substance.defaultUnit);
+    if (substance && !editingTrip) setUnit(substance.defaultUnit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [substance?.id]);
 
-  // Reset the form whenever it's (re-)opened, and prefill the time
-  // differently depending on whether this is a live entry or a backdated one.
+  // Reset/prefill the form whenever it's (re-)opened: blank for a new entry,
+  // or filled from the existing trip when editing one.
   useEffect(() => {
-    if (!mode) return;
-    setSubstanceId('');
-    setAmount('');
-    setNotes('');
+    if (!target) return;
     setShowAdvanced(false);
-    setLocation('');
-    setSetting('');
-    setMoodBefore(null);
     setError(null);
-    setStartTime(mode === 'new' ? toLocalInputValue(new Date()) : '');
-  }, [mode]);
+    if (target.mode === 'edit') {
+      const t = target.trip;
+      setSubstanceId(t.substanceId);
+      setAmount(String(t.amountValue));
+      setUnit(t.amountUnit);
+      setNotes(t.notes ?? '');
+      setShowAdvanced(Boolean(t.location || t.setting || t.moodBefore));
+      setLocation(t.location ?? '');
+      setSetting(t.setting ?? '');
+      setMoodBefore(t.moodBefore ?? null);
+      setStartTime(toLocalInputValue(new Date(t.startTime)));
+    } else {
+      setSubstanceId('');
+      setAmount('');
+      setNotes('');
+      setLocation('');
+      setSetting('');
+      setMoodBefore(null);
+      setStartTime(target.mode === 'new' ? toLocalInputValue(new Date()) : '');
+    }
+  }, [target]);
 
-  if (!mode) return null;
+  if (!target) return null;
 
   const amountNum = parseFloat(amount.replace(',', '.'));
   const doseLevel = substance && !Number.isNaN(amountNum) && amountNum > 0 ? getDoseLevel(substance, amountNum, unit) : null;
 
-  // Most recent previous trip of the same substance, for prefill and the tolerance check below.
-  const lastTripForSubstance = substance ? trips.find((t) => t.substanceId === substance.id) ?? null : null;
+  // Other trips (excluding the one being edited), for prefill and the tolerance check below.
+  const otherTrips = editingTrip ? trips.filter((t) => t.id !== editingTrip.id) : trips;
+  const lastTripForSubstance = substance ? otherTrips.find((t) => t.substanceId === substance.id) ?? null : null;
 
   function applyLastTrip() {
     if (!lastTripForSubstance) return;
@@ -72,7 +89,7 @@ export function NewTripForm({ mode, onClose }: Props) {
   let toleranceWarning: string | null = null;
   if (substance && startTime) {
     const startDate = fromLocalInputValue(startTime);
-    const prior = trips
+    const prior = otherTrips
       .filter((t) => t.substanceId === substance.id && new Date(t.startTime).getTime() < startDate.getTime())
       .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime())[0];
     if (prior) {
@@ -102,8 +119,7 @@ export function NewTripForm({ mode, onClose }: Props) {
     }
     setSaving(true);
     try {
-      const trip: Trip = {
-        id: crypto.randomUUID(),
+      const patch = {
         substanceId: substance.id,
         startTime: fromLocalInputValue(startTime).toISOString(),
         amountValue: amountNum,
@@ -112,10 +128,18 @@ export function NewTripForm({ mode, onClose }: Props) {
         location: location.trim() || undefined,
         setting: setting || undefined,
         moodBefore: moodBefore ?? undefined,
-        source: 'manual',
-        createdAt: new Date().toISOString(),
       };
-      await db.trips.add(trip);
+      if (editingTrip) {
+        await db.trips.update(editingTrip.id, patch);
+      } else {
+        const trip: Trip = {
+          id: crypto.randomUUID(),
+          ...patch,
+          source: 'manual',
+          createdAt: new Date().toISOString(),
+        };
+        await db.trips.add(trip);
+      }
       onClose();
     } finally {
       setSaving(false);
@@ -129,7 +153,9 @@ export function NewTripForm({ mode, onClose }: Props) {
         className="w-full sm:max-w-md bg-white dark:bg-neutral-900 rounded-t-2xl sm:rounded-2xl border border-black/10 dark:border-white/10 p-5 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{mode === 'past' ? 'Trip nachtragen' : 'Neuer Trip'}</h2>
+          <h2 className="text-lg font-semibold">
+            {target.mode === 'edit' ? 'Trip bearbeiten' : target.mode === 'past' ? 'Trip nachtragen' : 'Neuer Trip'}
+          </h2>
           <button type="button" onClick={onClose} className="text-black/40 dark:text-white/40 hover:text-black/70 dark:hover:text-white/70">
             ✕
           </button>
@@ -150,7 +176,7 @@ export function NewTripForm({ mode, onClose }: Props) {
           </select>
         </label>
 
-        {lastTripForSubstance && (
+        {lastTripForSubstance && target.mode !== 'edit' && (
           <button
             type="button"
             onClick={applyLastTrip}
@@ -200,7 +226,7 @@ export function NewTripForm({ mode, onClose }: Props) {
 
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-black/60 dark:text-white/60">
-            {mode === 'past' ? 'Zeitpunkt (wann hat der Trip begonnen?)' : 'Zeitpunkt'}
+            {target.mode === 'past' || target.mode === 'edit' ? 'Zeitpunkt (wann hat der Trip begonnen?)' : 'Zeitpunkt'}
           </span>
           <input
             type="datetime-local"
@@ -304,7 +330,7 @@ export function NewTripForm({ mode, onClose }: Props) {
             disabled={saving || substances.length === 0}
             className="flex-1 rounded-full bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white py-2 text-sm font-medium"
           >
-            {mode === 'past' ? 'Nachtragen' : 'Speichern'}
+            {target.mode === 'past' ? 'Nachtragen' : 'Speichern'}
           </button>
         </div>
       </form>

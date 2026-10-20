@@ -8,6 +8,7 @@ import {
   tripTotalAmount,
 } from '../lib/timeline';
 import { formatDayMonth } from '../lib/format';
+import { RATING_COLORS, RATING_LABELS } from '../lib/rating';
 
 interface Props {
   trips: Trip[];
@@ -50,41 +51,64 @@ export function StatsView({ trips, substances, substancesById }: Props) {
 
 function RatingOverTime({ trips }: { trips: Trip[] }) {
   const sorted = [...trips].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-  const width = 100;
-  const height = 60;
-  const padX = 4;
-  const padY = 8;
-  const step = sorted.length > 1 ? (width - padX * 2) / (sorted.length - 1) : 0;
-  const x = (i: number) => padX + i * step;
-  const y = (rating: number) => height - padY - ((rating - 1) / 4) * (height - padY * 2);
+
+  // Fixed pixel spacing per point (scrollable if many trips) instead of
+  // squeezing everything into the container width, which made the line
+  // look like compressed noise.
+  const POINT_GAP = 28;
+  const PAD_LEFT = 18;
+  const PAD_RIGHT = 10;
+  const PAD_TOP = 10;
+  const PAD_BOTTOM = 10;
+  const plotHeight = 70;
+  const height = PAD_TOP + plotHeight + PAD_BOTTOM;
+  const plotWidth = Math.max(100, (sorted.length - 1) * POINT_GAP);
+  const width = PAD_LEFT + plotWidth + PAD_RIGHT;
+
+  const x = (i: number) => PAD_LEFT + i * POINT_GAP;
+  const y = (rating: number) => PAD_TOP + (1 - (rating - 1) / 4) * plotHeight;
 
   const points = sorted.map((t, i) => `${x(i)},${y(t.rating ?? 1)}`).join(' ');
 
   return (
     <div>
       <div className="text-sm font-medium mb-2">Bewertung im Zeitverlauf</div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-24" preserveAspectRatio="none">
-        {[1, 2, 3, 4, 5].map((r) => (
-          <line
-            key={r}
-            x1={0}
-            x2={width}
-            y1={y(r)}
-            y2={y(r)}
-            stroke="currentColor"
-            strokeOpacity={0.08}
-            strokeWidth={0.5}
-          />
-        ))}
-        {sorted.length > 1 && (
-          <polyline points={points} fill="none" stroke="#7c3aed" strokeWidth={1.5} strokeLinejoin="round" />
-        )}
-        {sorted.map((t, i) => (
-          <circle key={t.id} cx={x(i)} cy={y(t.rating ?? 1)} r={1.8} fill="#7c3aed" />
-        ))}
-      </svg>
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} className="max-w-full">
+          {[1, 2, 3, 4, 5].map((r) => (
+            <g key={r}>
+              <line
+                x1={PAD_LEFT}
+                x2={width}
+                y1={y(r)}
+                y2={y(r)}
+                stroke="currentColor"
+                strokeOpacity={0.1}
+                strokeWidth={1}
+              />
+              <text x={0} y={y(r) + 3} fontSize={9} fill="currentColor" opacity={0.45}>
+                {r}
+              </text>
+            </g>
+          ))}
+          {sorted.length > 1 && (
+            <polyline points={points} fill="none" stroke="currentColor" strokeOpacity={0.25} strokeWidth={1.5} strokeLinejoin="round" />
+          )}
+          {sorted.map((t, i) => {
+            const rating = t.rating ?? 1;
+            return (
+              <circle key={t.id} cx={x(i)} cy={y(rating)} r={3.5} fill={RATING_COLORS[rating - 1]} stroke="white" strokeWidth={1}>
+                <title>
+                  {formatDayMonth(new Date(t.startTime))} · {RATING_LABELS[rating - 1]}
+                </title>
+              </circle>
+            );
+          })}
+        </svg>
+      </div>
       <div className="flex justify-between text-xs text-black/40 dark:text-white/40 mt-1">
         <span>{formatDayMonth(new Date(sorted[0].startTime))}</span>
+        <span>1 = sehr schlecht, 5 = sehr gut</span>
         <span>{formatDayMonth(new Date(sorted[sorted.length - 1].startTime))}</span>
       </div>
     </div>
@@ -193,16 +217,31 @@ function YearHeatmap({ trips, substancesById }: { trips: Trip[]; substancesById:
   }
   const weeks = Math.ceil(days.length / 7);
 
+  const CELL = 11;
+  const MONTH_ROW = 14;
+  const width = weeks * CELL;
+  const height = MONTH_ROW + 7 * CELL;
+
+  // One label per calendar month, placed at the week column where it starts.
+  const monthLabels: { week: number; label: string }[] = [];
+  let lastMonth = -1;
+  days.forEach((day, i) => {
+    if (day.getMonth() !== lastMonth) {
+      monthLabels.push({ week: Math.floor(i / 7), label: day.toLocaleDateString('de-CH', { month: 'short' }) });
+      lastMonth = day.getMonth();
+    }
+  });
+
   return (
     <div>
       <div className="text-sm font-medium mb-2">Trip-Häufigkeit (letzte 12 Monate)</div>
       <div className="overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${weeks * 11} ${7 * 11}`}
-          width={weeks * 11}
-          height={7 * 11}
-          className="max-w-full"
-        >
+        <svg viewBox={`0 0 ${width} ${height}`} width={width} height={height} className="max-w-full">
+          {monthLabels.map((m, i) => (
+            <text key={i} x={m.week * CELL} y={MONTH_ROW - 4} fontSize={8} fill="currentColor" opacity={0.45}>
+              {m.label}
+            </text>
+          ))}
           {days.map((day, i) => {
             const week = Math.floor(i / 7);
             const weekday = (day.getDay() + 6) % 7;
@@ -211,8 +250,8 @@ function YearHeatmap({ trips, substancesById }: { trips: Trip[]; substancesById:
             return (
               <rect
                 key={i}
-                x={week * 11}
-                y={weekday * 11}
+                x={week * CELL}
+                y={MONTH_ROW + weekday * CELL}
                 width={9}
                 height={9}
                 rx={2}
@@ -227,6 +266,9 @@ function YearHeatmap({ trips, substancesById }: { trips: Trip[]; substancesById:
             );
           })}
         </svg>
+      </div>
+      <div className="text-xs text-black/40 dark:text-white/40 mt-1">
+        Jedes Feld ist ein Tag. Eingefärbt = an diesem Tag ein Trip, in der Farbe der Substanz.
       </div>
     </div>
   );

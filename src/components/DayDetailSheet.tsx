@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Substance } from '../types';
+import type { Substance, Trip } from '../types';
 import type { DayInfo } from '../lib/calendar';
 import {
   computeTripBoundaries,
@@ -20,6 +20,7 @@ interface Props {
   info: DayInfo;
   substancesById: Map<string, Substance>;
   onClose: () => void;
+  onEditTrip: (trip: Trip) => void;
 }
 
 const STATUS_LABEL: Record<DayInfo['status'], string> = {
@@ -29,7 +30,7 @@ const STATUS_LABEL: Record<DayInfo['status'], string> = {
   trip: 'Trip',
 };
 
-export function DayDetailSheet({ day, info, substancesById, onClose }: Props) {
+export function DayDetailSheet({ day, info, substancesById, onClose, onEditTrip }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
@@ -63,36 +64,48 @@ export function DayDetailSheet({ day, info, substancesById, onClose }: Props) {
               const expanded = expandedId === trip.id;
               return (
                 <div key={trip.id} className="rounded-xl border border-black/10 dark:border-white/10 p-3">
-                  <div className="font-medium flex items-center gap-2 flex-wrap">
-                    <span>{substance.emoji}</span>
-                    <span>{substance.name}</span>
-                    <span className="text-black/50 dark:text-white/50 font-normal">
-                      {formatAmount(totalAmount, trip.amountUnit)}
-                      {trip.redoses && trip.redoses.length > 0 && (
-                        <span className="text-black/35 dark:text-white/35"> (inkl. Nachlegen)</span>
-                      )}
-                    </span>
-                    <span
-                      className="text-xs rounded-full px-2 py-0.5 font-medium"
-                      style={{ backgroundColor: DOSE_LEVEL_COLOR[doseLevel], color: DOSE_LEVEL_TEXT_COLOR[doseLevel] }}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium flex items-center gap-2 flex-wrap">
+                        <span>{substance.emoji}</span>
+                        <span>{substance.name}</span>
+                        <span className="text-black/50 dark:text-white/50 font-normal">
+                          {formatAmount(totalAmount, trip.amountUnit)}
+                          {trip.redoses && trip.redoses.length > 0 && (
+                            <span className="text-black/35 dark:text-white/35"> (inkl. Nachlegen)</span>
+                          )}
+                        </span>
+                        <span
+                          className="text-xs rounded-full px-2 py-0.5 font-medium"
+                          style={{ backgroundColor: DOSE_LEVEL_COLOR[doseLevel], color: DOSE_LEVEL_TEXT_COLOR[doseLevel] }}
+                        >
+                          {DOSE_LEVEL_LABEL[doseLevel]}
+                        </span>
+                        {trip.source === 'import' && (
+                          <span className="text-xs rounded-full px-2 py-0.5 bg-black/5 dark:bg-white/10 text-black/40 dark:text-white/40">
+                            importiert
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-black/50 dark:text-white/50 mt-1 flex flex-col gap-0.5">
+                        <span>Start: {formatDateTime(b.start)}</span>
+                        <span>Wirkung endet: {formatDateTime(b.tailEnd)}</span>
+                        <span>Afterglow bis: {formatDate(b.afterglowEnd)}</span>
+                        <span>Toleranz-Reset: {formatDate(b.toleranceResetEnd)}</span>
+                      </div>
+                      <TripContext trip={trip} />
+                      <RedoseList trip={trip} />
+                      {trip.notes && <div className="text-sm mt-2 whitespace-pre-wrap">{trip.notes}</div>}
+                    </div>
+                    <button
+                      onClick={() => onEditTrip(trip)}
+                      className="text-black/30 dark:text-white/30 hover:text-violet-600 shrink-0"
+                      aria-label="Bearbeiten"
+                      title="Bearbeiten"
                     >
-                      {DOSE_LEVEL_LABEL[doseLevel]}
-                    </span>
-                    {trip.source === 'import' && (
-                      <span className="text-xs rounded-full px-2 py-0.5 bg-black/5 dark:bg-white/10 text-black/40 dark:text-white/40">
-                        importiert
-                      </span>
-                    )}
+                      ✏️
+                    </button>
                   </div>
-                  <div className="text-xs text-black/50 dark:text-white/50 mt-1 flex flex-col gap-0.5">
-                    <span>Start: {formatDateTime(b.start)}</span>
-                    <span>Wirkung endet: {formatDateTime(b.tailEnd)}</span>
-                    <span>Afterglow bis: {formatDate(b.afterglowEnd)}</span>
-                    <span>Toleranz-Reset: {formatDate(b.toleranceResetEnd)}</span>
-                  </div>
-                  <TripContext trip={trip} />
-                  <RedoseList trip={trip} />
-                  {trip.notes && <div className="text-sm mt-2 whitespace-pre-wrap">{trip.notes}</div>}
 
                   <TripRating trip={trip} substance={substance} />
 
